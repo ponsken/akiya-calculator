@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>空き家投資 収支計算ツール</title>
+  <style>
+    :root{
+      --bg:#f5f7fa;
+      --card:#ffffff;
+      --text:#1f2937;
+      --muted:#6b7280;
+      --line:#e5e7eb;
+      --accent:#2563eb;
+      --good:#15803d;
+      --warn:#b45309;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
+    .wrap{
+      max-width:900px;
+      margin:0 auto;
+      padding:24px 16px 48px;
+    }
+    h1{
+      font-size:28px;
+      margin:0 0 8px;
+    }
+    .lead{
+      margin:0 0 24px;
+      color:var(--muted);
+      line-height:1.6;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:16px;
+    }
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:18px;
+      box-shadow:0 4px 14px rgba(0,0,0,.04);
+    }
+    .card h2{
+      font-size:18px;
+      margin:0 0 16px;
+    }
+    .field{
+      margin-bottom:14px;
+    }
+    label{
+      display:block;
+      font-size:14px;
+      font-weight:600;
+      margin-bottom:6px;
+    }
+    .input-wrap{
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    input{
+      width:100%;
+      padding:12px 13px;
+      border:1px solid #cfd5dd;
+      border-radius:10px;
+      font-size:16px;
+      outline:none;
+      background:#fff;
+    }
+    input:focus{
+      border-color:var(--accent);
+      box-shadow:0 0 0 3px rgba(37,99,235,.12);
+    }
+    .unit{
+      min-width:42px;
+      color:var(--muted);
+      font-size:14px;
+    }
+    .results{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:12px;
+    }
+    .result{
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:14px;
+      background:#fafafa;
+    }
+    .result .name{
+      font-size:13px;
+      color:var(--muted);
+      margin-bottom:6px;
+    }
+    .result .value{
+      font-size:22px;
+      font-weight:700;
+      word-break:break-word;
+    }
+    .good{ color:var(--good); }
+    .warn{ color:var(--warn); }
+    .formula{
+      margin-top:16px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.7;
+    }
+    button{
+      width:100%;
+      margin-top:8px;
+      padding:12px;
+      border:0;
+      border-radius:10px;
+      background:#e5e7eb;
+      color:#374151;
+      font-size:15px;
+      cursor:pointer;
+    }
+    button:hover{ background:#dbe0e6; }
+
+    @media(max-width:700px){
+      .grid{grid-template-columns:1fr}
+      .results{grid-template-columns:1fr}
+      h1{font-size:24px}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>空き家投資 収支計算ツール</h1>
+    <p class="lead">物件価格や家賃、年間経費、空室率を入力すると、年間キャッシュフローや利回り、投下資金回収年数を自動計算します。</p>
+
+    <div class="grid">
+      <section class="card">
+        <h2>入力</h2>
+
+        <div class="field">
+          <label for="purchase">購入価格</label>
+          <div class="input-wrap">
+            <input id="purchase" type="number" min="0" value="3000000">
+            <span class="unit">円</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="fees">諸費用</label>
+          <div class="input-wrap">
+            <input id="fees" type="number" min="0" value="300000">
+            <span class="unit">円</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="renovation">リフォーム費</label>
+          <div class="input-wrap">
+            <input id="renovation" type="number" min="0" value="1000000">
+            <span class="unit">円</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="rent">月額家賃</label>
+          <div class="input-wrap">
+            <input id="rent" type="number" min="0" value="60000">
+            <span class="unit">円</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="tax">固定資産税（年間）</label>
+          <div class="input-wrap">
+            <input id="tax" type="number" min="0" value="80000">
+            <span class="unit">円</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="insurance">火災保険（年間）</label>
+          <div class="input-wrap">
+            <input id="insurance" type="number" min="0" value="30000">
+            <span class="unit">円</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="maintenance">年間修繕費</label>
+          <div class="input-wrap">
+            <input id="maintenance" type="number" min="0" value="60000">
+            <span class="unit">円</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="vacancy">空室率</label>
+          <div class="input-wrap">
+            <input id="vacancy" type="number" min="0" max="100" step="0.1" value="10">
+            <span class="unit">%</span>
+          </div>
+        </div>
+
+        <button id="resetBtn" type="button">初期値に戻す</button>
+      </section>
+
+      <section class="card">
+        <h2>計算結果</h2>
+
+        <div class="results">
+          <div class="result">
+            <div class="name">総投下資金</div>
+            <div class="value" id="totalInvestment">-</div>
+          </div>
+
+          <div class="result">
+            <div class="name">満室想定 年間家賃</div>
+            <div class="value" id="grossRent">-</div>
+          </div>
+
+          <div class="result">
+            <div class="name">空室考慮後 年間家賃収入</div>
+            <div class="value" id="effectiveRent">-</div>
+          </div>
+
+          <div class="result">
+            <div class="name">年間経費</div>
+            <div class="value" id="annualExpenses">-</div>
+          </div>
+
+          <div class="result">
+            <div class="name">年間キャッシュフロー</div>
+            <div class="value good" id="cashFlow">-</div>
+          </div>
+
+          <div class="result">
+            <div class="name">表面利回り</div>
+            <div class="value" id="grossYield">-</div>
+          </div>
+
+          <div class="result">
+            <div class="name">実質利回り</div>
+            <div class="value" id="netYield">-</div>
+          </div>
+
+          <div class="result">
+            <div class="name">投下資金回収年数</div>
+            <div class="value" id="payback">-</div>
+          </div>
+        </div>
+
+        <div class="formula">
+          表面利回り ＝ 満室想定年間家賃 ÷ 購入価格<br>
+          実質利回り ＝ 年間キャッシュフロー ÷ 総投下資金<br>
+          投下資金回収年数 ＝ 総投下資金 ÷ 年間キャッシュフロー<br><br>
+          ※融資返済、所得税・住民税、管理委託費、募集広告費、突発修繕などは含めていません。
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const ids = ["purchase","fees","renovation","rent","tax","insurance","maintenance","vacancy"];
+
+    const yen = n => {
+      if (!Number.isFinite(n)) return "-";
+      return Math.round(n).toLocaleString("ja-JP") + " 円";
+    };
+
+    const pct = n => {
+      if (!Number.isFinite(n)) return "-";
+      return n.toFixed(2) + " %";
+    };
+
+    function val(id){
+      const n = Number(document.getElementById(id).value);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function calculate(){
+      const purchase = Math.max(0, val("purchase"));
+      const fees = Math.max(0, val("fees"));
+      const renovation = Math.max(0, val("renovation"));
+      const rent = Math.max(0, val("rent"));
+      const tax = Math.max(0, val("tax"));
+      const insurance = Math.max(0, val("insurance"));
+      const maintenance = Math.max(0, val("maintenance"));
+      const vacancy = Math.min(100, Math.max(0, val("vacancy")));
+
+      const totalInvestment = purchase + fees + renovation;
+      const grossRent = rent * 12;
+      const effectiveRent = grossRent * (1 - vacancy / 100);
+      const annualExpenses = tax + insurance + maintenance;
+      const cashFlow = effectiveRent - annualExpenses;
+
+      const grossYield = purchase > 0 ? (grossRent / purchase) * 100 : NaN;
+      const netYield = totalInvestment > 0 ? (cashFlow / totalInvestment) * 100 : NaN;
+      const payback = cashFlow > 0 ? totalInvestment / cashFlow : NaN;
+
+      document.getElementById("totalInvestment").textContent = yen(totalInvestment);
+      document.getElementById("grossRent").textContent = yen(grossRent);
+      document.getElementById("effectiveRent").textContent = yen(effectiveRent);
+      document.getElementById("annualExpenses").textContent = yen(annualExpenses);
+      document.getElementById("cashFlow").textContent = yen(cashFlow);
+      document.getElementById("grossYield").textContent = pct(grossYield);
+      document.getElementById("netYield").textContent = pct(netYield);
+      document.getElementById("payback").textContent =
+        Number.isFinite(payback) ? payback.toFixed(1) + " 年" : "回収不可";
+
+      const cf = document.getElementById("cashFlow");
+      cf.className = "value " + (cashFlow >= 0 ? "good" : "warn");
+    }
+
+    ids.forEach(id => {
+      document.getElementById(id).addEventListener("input", calculate);
+    });
+
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      document.getElementById("purchase").value = 3000000;
+      document.getElementById("fees").value = 300000;
+      document.getElementById("renovation").value = 1000000;
+      document.getElementById("rent").value = 60000;
+      document.getElementById("tax").value = 80000;
+      document.getElementById("insurance").value = 30000;
+      document.getElementById("maintenance").value = 60000;
+      document.getElementById("vacancy").value = 10;
+      calculate();
+    });
+
+    calculate();
+  </script>
+</body>
+</html>
