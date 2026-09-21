@@ -102,7 +102,7 @@
 <div class="field">
   <label for="builtYear">築年（西暦）</label>
   <div class="input-wrap">
-    <input id="builtYear" type="number" placeholder="例：1979">
+    <input id="builtYear" type="number">
     <span class="unit">年</span>
   </div>
 </div>
@@ -160,6 +160,7 @@
 
         <div class="results">
           <div class="result"><div class="name">総投下資金</div><div class="value" id="totalInvestment">-</div></div>
+          <div class="result"><div class="name">築年数</div><div class="value" id="buildingAge">-</div></div>
           <div class="result"><div class="name">満室想定 年間家賃</div><div class="value" id="grossRent">-</div></div>
           <div class="result"><div class="name">空室考慮後 年間家賃収入</div><div class="value" id="effectiveRent">-</div></div>
           <div class="result"><div class="name">年間経費</div><div class="value" id="annualExpenses">-</div></div>
@@ -195,6 +196,15 @@
       const prefecture = document.getElementById("prefecture").value;
       const city = document.getElementById("city").value.trim();
 
+      // ↓ 築年数の計算を追加
+  const currentYear = new Date().getFullYear();
+  const builtYear = Number(document.getElementById("builtYear").value);
+
+  const buildingAge = builtYear
+    ? currentYear - builtYear
+    : null;
+
+
       document.getElementById("propertyTitle").textContent = propertyName || "物件名未入力";
       document.getElementById("propertyLocation").textContent =
         [prefecture, city].filter(Boolean).join(" ") || "地域未入力";
@@ -220,6 +230,7 @@
       document.getElementById("totalInvestment").textContent = yen(totalInvestment);
       document.getElementById("grossRent").textContent = yen(grossRent);
       document.getElementById("effectiveRent").textContent = yen(effectiveRent);
+      document.getElementById("buildingAge").textContent = buildingAge !== null ? buildingAge + " 年" : "-";
       document.getElementById("annualExpenses").textContent = yen(annualExpenses);
       document.getElementById("cashFlow").textContent = yen(cashFlow);
       document.getElementById("grossYield").textContent = pct(grossYield);
@@ -232,6 +243,7 @@
     ids.forEach(id => document.getElementById(id).addEventListener("input", calculate));
     ["propertyName","city"].forEach(id => document.getElementById(id).addEventListener("input", calculate));
     document.getElementById("prefecture").addEventListener("change", calculate);
+    document.getElementById("builtYear").addEventListener("input", calculate);
 
     document.getElementById("resetBtn").addEventListener("click", () => {
       document.getElementById("propertyName").value = "";
