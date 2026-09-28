@@ -212,6 +212,8 @@
       const propertyName = document.getElementById("propertyName").value.trim();
       const prefecture = document.getElementById("prefecture").value;
       const city = document.getElementById("city").value.trim();
+      const landArea = Number(document.getElementById("landArea").value);
+      const buildingArea = Number(document.getElementById("buildingArea").value);
 
       // ↓ 築年数の計算を追加
   const currentYear = new Date().getFullYear();
@@ -248,6 +250,8 @@
       document.getElementById("grossRent").textContent = yen(grossRent);
       document.getElementById("effectiveRent").textContent = yen(effectiveRent);
       document.getElementById("buildingAge").textContent = buildingAge !== null ? buildingAge + " 年" : "-";
+      document.getElementById("landAreaResult").textContent =landArea ? landArea + " ㎡" : "-";
+      document.getElementById("buildingAreaResult").textContent =buildingArea ? buildingArea + " ㎡" : "-";
       document.getElementById("annualExpenses").textContent = yen(annualExpenses);
       document.getElementById("cashFlow").textContent = yen(cashFlow);
       document.getElementById("grossYield").textContent = pct(grossYield);
