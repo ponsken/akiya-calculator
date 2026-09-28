@@ -265,11 +265,15 @@
     ["propertyName","city"].forEach(id => document.getElementById(id).addEventListener("input", calculate));
     document.getElementById("prefecture").addEventListener("change", calculate);
     document.getElementById("builtYear").addEventListener("input", calculate);
-
+    document.getElementById("landArea").addEventListener("input", calculate);
+    document.getElementById("buildingArea").addEventListener("input", calculate);
     document.getElementById("resetBtn").addEventListener("click", () => {
       document.getElementById("propertyName").value = "";
-      document.getElementById("prefecture").value = "埼玉県";
+      document.getElementById("prefecture").value = "";
       document.getElementById("city").value = "";
+      document.getElementById("builtYear").value = "";
+      document.getElementById("landArea").value = "";
+      document.getElementById("buildingArea").value = "";
       document.getElementById("purchase").value = 3000000;
       document.getElementById("fees").value = 300000;
       document.getElementById("renovation").value = 1000000;
