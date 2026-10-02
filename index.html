@@ -279,7 +279,7 @@
       document.getElementById("cashFlow").textContent = yen(cashFlow);
       document.getElementById("grossYield").textContent = pct(grossYield);
       document.getElementById("netYield").textContent = pct(netYield);
-      const hashRequiredInputs = purchase > 0 && rent >0;
+      const hasRequiredInputs = purchase > 0 && rent >0;
       document.getElementById("payback").textContent = 
         !hasRequiredInputs
         ? "-"
