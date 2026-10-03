@@ -277,6 +277,9 @@
       const purchase = Math.max(0, val("purchase"));
       const fees = Math.max(0, val("fees"));
       const renovation = Math.max(0, val("renovation"));
+      const loanAmount = Math.max(0, val("loanAmount"));
+　　　const interestRate = Math.max(0, val("interestRate"));
+　　  const loanYears = Math.max(0, val("loanYears"));
       const rent = Math.max(0, val("rent"));
       const tax = Math.max(0, val("tax"));
       const insurance = Math.max(0, val("insurance"));
@@ -284,10 +287,28 @@
       const vacancy = Math.min(100, Math.max(0, val("vacancy")));
 
       const totalInvestment = purchase + fees + renovation;
+      const monthlyRate = interestRate / 100 / 12;
+const numberOfPayments = loanYears * 12;
+
+let monthlyLoanPayment = 0;
+
+if (loanAmount > 0 && numberOfPayments > 0) {
+  if (monthlyRate > 0) {
+    monthlyLoanPayment =
+      loanAmount *
+      monthlyRate *
+      Math.pow(1 + monthlyRate, numberOfPayments) /
+      (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
+  } else {
+    monthlyLoanPayment = loanAmount / numberOfPayments;
+  }
+}
+
+const annualLoanPayment = monthlyLoanPayment * 12;
       const grossRent = rent * 12;
       const effectiveRent = grossRent * (1 - vacancy / 100);
       const annualExpenses = tax + insurance + maintenance;
-      const cashFlow = effectiveRent - annualExpenses;
+      const cashFlow = effectiveRent - annualExpenses - annualLoanPayment;
       const grossYield = purchase > 0 ? grossRent / purchase * 100 : NaN;
       const netYield = totalInvestment > 0 ? cashFlow / totalInvestment * 100 : NaN;
       const payback = cashFlow > 0 ? totalInvestment / cashFlow : NaN;
