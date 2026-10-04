@@ -227,6 +227,15 @@
           <div class="result"><div class="name">満室想定 年間家賃</div><div class="value" id="grossRent">-</div></div>
           <div class="result"><div class="name">空室考慮後 年間家賃収入</div><div class="value" id="effectiveRent">-</div></div>
           <div class="result"><div class="name">年間経費</div><div class="value" id="annualExpenses">-</div></div>
+          <div class="result">
+  <div class="name">月間ローン返済</div>
+  <div class="value" id="monthlyLoanPayment">-</div>
+</div>
+
+<div class="result">
+  <div class="name">年間ローン返済</div>
+  <div class="value" id="annualLoanPayment">-</div>
+</div>
           <div class="result"><div class="name">年間キャッシュフロー</div><div class="value good" id="cashFlow">-</div></div>
           <div class="result"><div class="name">表面利回り</div><div class="value" id="grossYield">-</div></div>
           <div class="result"><div class="name">実質利回り</div><div class="value" id="netYield">-</div></div>
@@ -305,6 +314,8 @@ if (loanAmount > 0 && numberOfPayments > 0) {
 }
 
 const annualLoanPayment = monthlyLoanPayment * 12;
+      document.getElementById("monthlyLoanPayment").textContent = yen(monthlyLoanPayment);
+      document.getElementById("annualLoanPayment").textContent = yen(annualLoanPayment);
       const grossRent = rent * 12;
       const effectiveRent = grossRent * (1 - vacancy / 100);
       const annualExpenses = tax + insurance + maintenance;
