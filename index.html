@@ -240,15 +240,16 @@
           <div class="result"><div class="name">自己資金</div><div class="value" id="equity">-</div></div>
           <div class="result"><div class="name">CCR（自己資金利回り）</div><div class="value" id="ccr">-</div></div>
           <div class="result"><div class="name">表面利回り</div><div class="value" id="grossYield">-</div></div>
-          <div class="result"><div class="name">実質利回り</div><div class="value" id="netYield">-</div></div>
-          <div class="result"><div class="name">投下資金回収年数</div><div class="value" id="payback">-</div></div>
+          <div class="result"><div class="name">実質利回り(融資前)</div><div class="value" id="netYield">-</div></div>
+          <div class="result"><div class="name">自己資金回収年数</div><div class="value" id="payback">-</div></div>
         </div>
 
         <div class="formula">
           表面利回り ＝ 満室想定年間家賃 ÷ 購入価格<br>
-          実質利回り ＝ 年間キャッシュフロー ÷ 総投下資金<br>
-          投下資金回収年数 ＝ 総投下資金 ÷ 年間キャッシュフロー<br><br>
-          ※融資返済、所得税・住民税、管理委託費、募集広告費、突発修繕などは含めていません。
+ 　　　　  実質利回り（融資前）＝（空室考慮後年間家賃収入 − 年間経費）÷ 総投資資金<br>
+          CCR（自己資金利回り）＝ 年間キャッシュフロー ÷ 自己資金<br>
+          年間キャッシュフロー ＝ 空室考慮後年間家賃収入 − 年間経費 − 年間ローン返済<br><br>
+          ※所得税・住民税・管理委託費・募集広告費・突発修繕などは含めていません。
         </div>
       </section>
     </div>
@@ -325,8 +326,11 @@ const annualLoanPayment = monthlyLoanPayment * 12;
       const equity = Math.max(0, totalInvestment - loanAmount);
       const ccr = equity > 0 ? cashFlow / equity * 100 : NaN;
       const grossYield = purchase > 0 ? grossRent / purchase * 100 : NaN;
-      const netYield = totalInvestment > 0 ? cashFlow / totalInvestment * 100 : NaN;
-      const payback = cashFlow > 0 ? totalInvestment / cashFlow : NaN;
+      const netIncomeBeforeLoan = effectiveRent - annualExpenses;
+      const netYield = totalInvestment > 0
+  ? netIncomeBeforeLoan / totalInvestment * 100
+  : NaN;
+      const payback = cashFlow > 0 ? equity / cashFlow : NaN;
 
       document.getElementById("totalInvestment").textContent = yen(totalInvestment);
       document.getElementById("grossRent").textContent = yen(grossRent);
