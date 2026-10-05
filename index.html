@@ -237,6 +237,8 @@
   <div class="value" id="annualLoanPayment">-</div>
 </div>
           <div class="result"><div class="name">年間キャッシュフロー</div><div class="value good" id="cashFlow">-</div></div>
+          <div class="result"><div class="name">自己資金</div><div class="value" id="equity">-</div></div>
+          <div class="result"><div class="name">CCR（自己資金利回り）</div><div class="value" id="ccr">-</div></div>
           <div class="result"><div class="name">表面利回り</div><div class="value" id="grossYield">-</div></div>
           <div class="result"><div class="name">実質利回り</div><div class="value" id="netYield">-</div></div>
           <div class="result"><div class="name">投下資金回収年数</div><div class="value" id="payback">-</div></div>
@@ -320,6 +322,8 @@ const annualLoanPayment = monthlyLoanPayment * 12;
       const effectiveRent = grossRent * (1 - vacancy / 100);
       const annualExpenses = tax + insurance + maintenance;
       const cashFlow = effectiveRent - annualExpenses - annualLoanPayment;
+      const equity = Math.max(0, totalInvestment - loanAmount);
+      const ccr = equity > 0 ? cashFlow / equity * 100 : NaN;
       const grossYield = purchase > 0 ? grossRent / purchase * 100 : NaN;
       const netYield = totalInvestment > 0 ? cashFlow / totalInvestment * 100 : NaN;
       const payback = cashFlow > 0 ? totalInvestment / cashFlow : NaN;
@@ -332,6 +336,8 @@ const annualLoanPayment = monthlyLoanPayment * 12;
       document.getElementById("buildingAreaResult").textContent =buildingArea ? buildingArea + " ㎡" : "-";
       document.getElementById("annualExpenses").textContent = yen(annualExpenses);
       document.getElementById("cashFlow").textContent = yen(cashFlow);
+      document.getElementById("equity").textContent = yen(equity);
+      document.getElementById("ccr").textContent = pct(ccr);
       document.getElementById("grossYield").textContent = pct(grossYield);
       document.getElementById("netYield").textContent = pct(netYield);
       const hasRequiredInputs = purchase > 0 && rent >0;
@@ -344,7 +350,7 @@ const annualLoanPayment = monthlyLoanPayment * 12;
 
       document.getElementById("cashFlow").className = "value " + (cashFlow >= 0 ? "good" : "warn");
     }
-
+    
     ids.forEach(id => document.getElementById(id).addEventListener("input", calculate));
     ["propertyName","city"].forEach(id => document.getElementById(id).addEventListener("input", calculate));
     document.getElementById("prefecture").addEventListener("change", calculate);
