@@ -74,6 +74,26 @@
   margin-top:4px;
   line-height:1.5;
 }
+
+    .saved-section{margin-top:18px}
+    .saved-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .saved-actions button{width:auto;margin:0;background:var(--accent);color:white}
+    .saved-actions button:hover{background:#1d4ed8}
+    .saved-list{display:grid;gap:10px;margin-top:14px}
+    .saved-item{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fafafa}
+    .saved-item-head{display:flex;gap:10px;align-items:flex-start;justify-content:space-between}
+    .saved-item-title{font-weight:700;overflow-wrap:anywhere}
+    .saved-item-meta{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.6}
+    .saved-item-buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .saved-item-buttons button{width:auto;margin:0;padding:8px 12px;font-size:13px}
+    .saved-item-buttons .danger{color:#b91c1c;background:#fee2e2}
+    .compare-wrap{overflow-x:auto;margin-top:12px}
+    .compare-table{border-collapse:collapse;width:100%;min-width:460px;font-size:13px}
+    .compare-table th,.compare-table td{padding:10px;border:1px solid var(--line);text-align:right;white-space:nowrap}
+    .compare-table th:first-child,.compare-table td:first-child{text-align:left}
+    .compare-table thead{background:#eff6ff}
+    .status-text{font-size:13px;color:var(--muted);line-height:1.6;margin-top:8px}
+    @media(max-width:700px){.saved-actions button{width:100%}.saved-item-buttons button{flex:1}}
   </style>
 </head>
 <body>
@@ -211,7 +231,7 @@
         <div class="property-summary">
           <div class="name">物件情報</div>
           <div class="property-title" id="propertyTitle">物件名未入力</div>
-          <div class="property-location" id="propertyLocation">埼玉県</div>
+          <div class="property-location" id="propertyLocation">地域未入力</div>
         </div>
 
         <div class="results">
@@ -247,9 +267,19 @@
   <div>自己資金回収年数 ＝ 自己資金 ÷ 年間キャッシュフロー</div>
   <div class="note">※所得税・住民税・管理委託費・募集広告費・突発修繕などは含めていません。</div>
 </div>
-        </div>
       </section>
     </div>
+
+    <section class="card saved-section" aria-labelledby="savedHeading">
+      <h2 id="savedHeading">保存した物件・比較</h2>
+      <div class="saved-actions"><button id="savePropertyBtn" type="button">現在の物件を保存</button></div>
+      <p class="status-text">この端末のブラウザ内に保存します。PCとスマホでは共有されません。ブラウザのデータ削除などで失われる場合があります。</p>
+      <div id="storageStatus" class="status-text" role="status" aria-live="polite"></div>
+      <div id="savedList" class="saved-list"></div>
+      <h2 style="margin-top:24px">物件比較（最大3件）</h2>
+      <p class="status-text">保存済み物件の「比較に追加」を選ぶと、収益指標を並べて比較できます。</p>
+      <div id="compareTable" class="compare-wrap"></div>
+    </section>
   </div>
 
   <script>
@@ -287,8 +317,8 @@
       const fees = Math.max(0, val("fees"));
       const renovation = Math.max(0, val("renovation"));
       const loanAmount = Math.max(0, val("loanAmount"));
-　　　const interestRate = Math.max(0, val("interestRate"));
-　　  const loanYears = Math.max(0, val("loanYears"));
+      const interestRate = Math.max(0, val("interestRate"));
+      const loanYears = Math.max(0, val("loanYears"));
       const rent = Math.max(0, val("rent"));
       const tax = Math.max(0, val("tax"));
       const insurance = Math.max(0, val("insurance"));
@@ -327,7 +357,7 @@ const annualLoanPayment = monthlyLoanPayment * 12;
       const netYield = totalInvestment > 0
   ? netIncomeBeforeLoan / totalInvestment * 100
   : NaN;
-      const payback = cashFlow > 0 ? equity / cashFlow : NaN;
+      const payback = cashFlow > 0 && equity > 0 ? equity / cashFlow : NaN;
 
       document.getElementById("totalInvestment").textContent = yen(totalInvestment);
       document.getElementById("grossRent").textContent = yen(grossRent);
@@ -347,7 +377,7 @@ const annualLoanPayment = monthlyLoanPayment * 12;
         ? "-"
         :cashFlow <= 0
         ?"回収不可"
-        : payback.toFixed(1) + " 年";
+        : Number.isFinite(payback) ? payback.toFixed(1) + " 年" : "-";
 
       document.getElementById("cashFlow").className = "value " + (cashFlow >= 0 ? "good" : "warn");
     }
@@ -368,6 +398,7 @@ const annualLoanPayment = monthlyLoanPayment * 12;
       document.getElementById("purchase").value = "";
       document.getElementById("fees").value = "";
       document.getElementById("renovation").value = "";
+      ["loanAmount","interestRate","loanYears"].forEach(id => document.getElementById(id).value = "");
       document.getElementById("rent").value = "";
       document.getElementById("tax").value = "";
       document.getElementById("insurance").value = "";
@@ -377,6 +408,135 @@ const annualLoanPayment = monthlyLoanPayment * 12;
     });
 
     calculate();
+
+    // 保存データは入力値だけを保持し、比較時には現在の計算式で再計算します。
+    const storageKey = "akiya-calculator-properties-v1";
+    const fieldIds = ["propertyName","prefecture","city","builtYear","landArea","buildingArea", ...ids];
+    let savedProperties = [];
+    let selectedCompareIds = [];
+    const statusNode = document.getElementById("storageStatus");
+
+    function showStatus(message){ statusNode.textContent = message; }
+    function getInputs(){
+      const inputs = {};
+      fieldIds.forEach(id => inputs[id] = document.getElementById(id).value);
+      return inputs;
+    }
+    function setInputs(inputs){
+      fieldIds.forEach(id => document.getElementById(id).value = inputs[id] ?? "");
+      calculate();
+      window.scrollTo({top:0,behavior:"smooth"});
+    }
+    function loadSaved(){
+      try {
+        const data = JSON.parse(localStorage.getItem(storageKey) || "[]");
+        savedProperties = Array.isArray(data) ? data.filter(p => p && typeof p.id === "string" && p.inputs && typeof p.inputs === "object") : [];
+      } catch(e){ savedProperties = []; showStatus("保存データを読み込めませんでした。ブラウザの保存設定をご確認ください。"); }
+    }
+    function persistSaved(){
+      try { localStorage.setItem(storageKey, JSON.stringify(savedProperties)); return true; }
+      catch(e){ showStatus("保存できませんでした。ブラウザの空き容量・プライベートモード等をご確認ください。"); return false; }
+    }
+    function numFrom(inputs,id){
+      const n=Number(inputs[id]);return Number.isFinite(n) ? Math.max(0,n) : 0;
+    }
+    function metrics(inputs){
+      const purchase=numFrom(inputs,"purchase"),fees=numFrom(inputs,"fees"),renovation=numFrom(inputs,"renovation");
+      const total=purchase+fees+renovation,loan=numFrom(inputs,"loanAmount"),rate=numFrom(inputs,"interestRate")/1200;
+      const months=numFrom(inputs,"loanYears")*12;
+      let monthly=0;
+      if(loan>0 && months>0){
+        monthly=rate>0 ? loan*rate/(1-Math.pow(1+rate,-months)) : loan/months;
+      }
+      const gross=numFrom(inputs,"rent")*12;
+      const effective=gross*(1-Math.min(100,numFrom(inputs,"vacancy"))/100);
+      const expenses=numFrom(inputs,"tax")+numFrom(inputs,"insurance")+numFrom(inputs,"maintenance");
+      const cf=effective-expenses-monthly*12;
+      const equity=Math.max(0,total-loan);
+      return {
+        cf, equity,
+        grossYield:purchase>0?gross/purchase*100:NaN,
+        netYield:total>0?(effective-expenses)/total*100:NaN,
+        ccr:equity>0?cf/equity*100:NaN,
+        payback:equity>0&&cf>0?equity/cf:NaN
+      };
+    }
+    function el(tag,cls,txt){
+      const node=document.createElement(tag);
+      if(cls)node.className=cls;
+      if(txt!==undefined)node.textContent=txt;
+      return node;
+    }
+    function propertyLabel(p){return (p.inputs.propertyName||"名称未設定").trim()||"名称未設定";}
+    function renderSaved(){
+      const list=document.getElementById("savedList");list.replaceChildren();
+      if(!savedProperties.length){list.append(el("p","status-text","まだ保存した物件はありません。"));}
+      savedProperties.forEach(p=>{
+        const m=metrics(p.inputs);
+        const item=el("div","saved-item");
+        const head=el("div","saved-item-head");
+        const left=el("div");
+        left.append(el("div","saved-item-title",propertyLabel(p)));
+        left.append(el("div","saved-item-meta",[p.inputs.prefecture,p.inputs.city].filter(Boolean).join(" ")||"地域未入力"));
+        left.append(el("div","saved-item-meta","年間CF: "+yen(m.cf)+" / CCR: "+pct(m.ccr)));
+        head.append(left);
+        const checkLabel=el("label",null,"比較に追加 ");
+        checkLabel.style.cssText="display:flex;align-items:center;gap:5px;font-size:12px;white-space:nowrap";
+        const check=document.createElement("input");check.type="checkbox";check.style.width="auto";
+        check.checked=selectedCompareIds.includes(p.id);
+        check.addEventListener("change",()=>{
+          if(check.checked && selectedCompareIds.length>=3){check.checked=false;showStatus("比較できるのは最大3件です。");return;}
+          selectedCompareIds=check.checked?[...selectedCompareIds,p.id]:selectedCompareIds.filter(id=>id!==p.id);
+          showStatus("");renderCompare();
+        });
+        checkLabel.prepend(check);head.append(checkLabel);item.append(head);
+        const actions=el("div","saved-item-buttons");
+        const restore=el("button",null,"呼び出す");restore.type="button";
+        restore.addEventListener("click",()=>{setInputs(p.inputs);showStatus("「"+propertyLabel(p)+"」を入力欄に呼び出しました。変更後は改めて保存してください。");});
+        const remove=el("button","danger","削除");remove.type="button";
+        remove.addEventListener("click",()=>{
+          if(!confirm("「"+propertyLabel(p)+"」を削除しますか？"))return;
+          const previous=savedProperties;
+          savedProperties=savedProperties.filter(x=>x.id!==p.id);
+          if(!persistSaved()){savedProperties=previous;return;}
+          selectedCompareIds=selectedCompareIds.filter(id=>id!==p.id);
+          showStatus("物件を削除しました。");renderSaved();
+        });
+        actions.append(restore,remove);item.append(actions);list.append(item);
+      });
+      renderCompare();
+    }
+    function renderCompare(){
+      const host=document.getElementById("compareTable");host.replaceChildren();
+      const items=selectedCompareIds.map(id=>savedProperties.find(p=>p.id===id)).filter(Boolean);
+      if(!items.length){host.append(el("p","status-text","比較する物件を選択してください。"));return;}
+      const table=el("table","compare-table"),thead=el("thead"),hrow=el("tr");
+      hrow.append(el("th",null,"指標"));items.forEach(p=>hrow.append(el("th",null,propertyLabel(p))));
+      thead.append(hrow);table.append(thead);
+      const tbody=el("tbody");
+      const rows=[
+        ["自己資金",m=>yen(m.equity)],
+        ["年間CF",m=>yen(m.cf)],
+        ["表面利回り",m=>pct(m.grossYield)],
+        ["実質利回り（融資前）",m=>pct(m.netYield)],
+        ["CCR（融資後）",m=>pct(m.ccr)],
+        ["自己資金回収年数",m=>Number.isFinite(m.payback)?m.payback.toFixed(1)+" 年":m.cf<=0?"回収不可":"-"]
+      ];
+      rows.forEach(([label,format])=>{
+        const tr=el("tr");tr.append(el("th",null,label));
+        items.forEach(p=>tr.append(el("td",null,format(metrics(p.inputs)))));tbody.append(tr);
+      });
+      table.append(tbody);host.append(table);
+    }
+    document.getElementById("savePropertyBtn").addEventListener("click",()=>{
+      const inputs=getInputs();
+      if(!inputs.propertyName.trim()){showStatus("保存する前に物件名を入力してください。");document.getElementById("propertyName").focus();return;}
+      const entry={id:String(Date.now())+"-"+Math.random().toString(36).slice(2),inputs};
+      savedProperties.unshift(entry);
+      if(!persistSaved()){savedProperties.shift();return;}
+      showStatus("「"+propertyLabel(entry)+"」を保存しました。" );renderSaved();
+    });
+    loadSaved();renderSaved();
   </script>
 </body>
 </html>
