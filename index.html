@@ -92,6 +92,13 @@
     .compare-table th,.compare-table td{padding:10px;border:1px solid var(--line);text-align:right;white-space:nowrap}
     .compare-table th:first-child,.compare-table td:first-child{text-align:left}
     .compare-table thead{background:#eff6ff}
+    /* 横スクロールしても指標名を表示し続ける */
+    .compare-table{min-width:660px;border-collapse:separate;border-spacing:0}
+    .compare-table th:first-child{position:sticky;left:0;z-index:2;background:#fff;min-width:165px;max-width:165px;white-space:normal;box-shadow:2px 0 4px rgba(0,0,0,.06)}
+    .compare-table thead th:first-child{z-index:3;background:#eff6ff}
+    .compare-table td.best-value{background:#ecfdf5;color:#166534;font-weight:700}
+    .compare-wrap{-webkit-overflow-scrolling:touch}
+    .compare-help{font-size:12px;color:var(--muted);margin-top:6px}
     .status-text{font-size:13px;color:var(--muted);line-height:1.6;margin-top:8px}
     @media(max-width:700px){.saved-actions button{width:100%}.saved-item-buttons button{flex:1}}
   </style>
@@ -278,6 +285,7 @@
       <div id="savedList" class="saved-list"></div>
       <h2 style="margin-top:24px">物件比較（最大3件）</h2>
       <p class="status-text">保存済み物件の「比較に追加」を選ぶと、収益指標を並べて比較できます。</p>
+      <p class="compare-help">スマホでは表を左右にスワイプできます。左端の指標名は固定表示されます。薄緑は収益指標が最も良い値です。</p>
       <div id="compareTable" class="compare-wrap"></div>
     </section>
   </div>
@@ -515,16 +523,25 @@ const annualLoanPayment = monthlyLoanPayment * 12;
       thead.append(hrow);table.append(thead);
       const tbody=el("tbody");
       const rows=[
-        ["自己資金",m=>yen(m.equity)],
-        ["年間CF",m=>yen(m.cf)],
-        ["表面利回り",m=>pct(m.grossYield)],
-        ["実質利回り（融資前）",m=>pct(m.netYield)],
-        ["CCR（融資後）",m=>pct(m.ccr)],
-        ["自己資金回収年数",m=>Number.isFinite(m.payback)?m.payback.toFixed(1)+" 年":m.cf<=0?"回収不可":"-"]
+        ["自己資金",m=>m.equity,m=>yen(m.equity),null],
+        ["年間CF",m=>m.cf,m=>yen(m.cf),"max"],
+        ["表面利回り",m=>m.grossYield,m=>pct(m.grossYield),"max"],
+        ["実質利回り（融資前）",m=>m.netYield,m=>pct(m.netYield),"max"],
+        ["CCR（融資後）",m=>m.ccr,m=>pct(m.ccr),"max"],
+        ["自己資金回収年数",m=>m.payback,m=>Number.isFinite(m.payback)?m.payback.toFixed(1)+" 年":m.cf<=0?"回収不可":"-","min"]
       ];
-      rows.forEach(([label,format])=>{
+      const allMetrics=items.map(p=>metrics(p.inputs));
+      rows.forEach(([label,getValue,format,bestDirection])=>{
         const tr=el("tr");tr.append(el("th",null,label));
-        items.forEach(p=>tr.append(el("td",null,format(metrics(p.inputs)))));tbody.append(tr);
+        const values=allMetrics.map(getValue);
+        const finiteValues=values.filter(Number.isFinite);
+        const best=finiteValues.length>=2 && bestDirection ? (bestDirection==="min"?Math.min(...finiteValues):Math.max(...finiteValues)) : null;
+        allMetrics.forEach((m,i)=>{
+          const td=el("td",null,format(m));
+          if(best!==null && Number.isFinite(values[i]) && Math.abs(values[i]-best)<1e-8)td.classList.add("best-value");
+          tr.append(td);
+        });
+        tbody.append(tr);
       });
       table.append(tbody);host.append(table);
     }
