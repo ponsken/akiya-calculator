@@ -552,7 +552,7 @@ const annualLoanPayment = monthlyLoanPayment * 12;
         ["自己資金",m=>m.equity,m=>compareYen(m.equity),null],
         ["年間CF",m=>m.cf,m=>compareYen(m.cf),"max"],
         ["表面利回り",m=>m.grossYield,m=>comparePct(m.grossYield),"max"],
-        ["実質利回り（融資前）",m=>m.netYield,m=>comparePct(m.netYield),"max"],
+        ["実質利回り",m=>m.netYield,m=>comparePct(m.netYield),"max"],
         ["CCR（融資後）",m=>m.ccr,m=>comparePct(m.ccr),"max"],
         ["自己資金回収年数",m=>m.payback,m=>compareYears(m),"min"]
       ];
