@@ -100,7 +100,21 @@
     .compare-wrap{-webkit-overflow-scrolling:touch}
     .compare-help{font-size:12px;color:var(--muted);margin-top:6px}
     .status-text{font-size:13px;color:var(--muted);line-height:1.6;margin-top:8px}
-    @media(max-width:700px){.saved-actions button{width:100%}.saved-item-buttons button{flex:1}}
+    @media(max-width:700px){
+      .saved-actions button{width:100%}
+      .saved-item-buttons button{flex:1}
+      /* スマホ：左端の指標列をコンパクトに固定し、物件列を横スクロール */
+      .compare-table{width:max-content;min-width:0;table-layout:fixed;font-size:12px}
+      .compare-table th,.compare-table td{padding:10px 7px}
+      .compare-table th:first-child{
+        width:112px;min-width:112px;max-width:112px;
+        white-space:normal;overflow-wrap:anywhere;line-height:1.45
+      }
+      .compare-table th:not(:first-child),.compare-table td:not(:first-child){
+        width:126px;min-width:126px;max-width:126px;
+        white-space:nowrap
+      }
+    }
   </style>
 </head>
 <body>
@@ -285,7 +299,7 @@
       <div id="savedList" class="saved-list"></div>
       <h2 style="margin-top:24px">物件比較（最大3件）</h2>
       <p class="status-text">保存済み物件の「比較に追加」を選ぶと、収益指標を並べて比較できます。</p>
-      <p class="compare-help">スマホでは表を左右にスワイプできます。左端の指標名は固定表示されます。薄緑は収益指標が最も良い値です。</p>
+      <p class="compare-help">スマホでは物件列を左右にスワイプできます。左端の指標名は固定されます。金額は万円単位で短縮表示し、薄緑は最も良い値を示します。</p>
       <div id="compareTable" class="compare-wrap"></div>
     </section>
   </div>
@@ -514,6 +528,18 @@ const annualLoanPayment = monthlyLoanPayment * 12;
       });
       renderCompare();
     }
+    // 比較表のみ金額を短縮。元の計算結果や保存データは変更しない。
+    function compareYen(n){
+      if(!Number.isFinite(n))return "-";
+      const rounded=Math.round(n);
+      if(Math.abs(rounded)>=10000){
+        const man=rounded/10000;
+        return (Number.isInteger(man)?man.toLocaleString("ja-JP"):man.toLocaleString("ja-JP",{maximumFractionDigits:1}))+"万円";
+      }
+      return rounded.toLocaleString("ja-JP")+"円";
+    }
+    function comparePct(n){return Number.isFinite(n)?n.toFixed(1)+"%":"-";}
+    function compareYears(m){return Number.isFinite(m.payback)?m.payback.toFixed(1)+"年":m.cf<=0?"回収不可":"-";}
     function renderCompare(){
       const host=document.getElementById("compareTable");host.replaceChildren();
       const items=selectedCompareIds.map(id=>savedProperties.find(p=>p.id===id)).filter(Boolean);
@@ -523,12 +549,12 @@ const annualLoanPayment = monthlyLoanPayment * 12;
       thead.append(hrow);table.append(thead);
       const tbody=el("tbody");
       const rows=[
-        ["自己資金",m=>m.equity,m=>yen(m.equity),null],
-        ["年間CF",m=>m.cf,m=>yen(m.cf),"max"],
-        ["表面利回り",m=>m.grossYield,m=>pct(m.grossYield),"max"],
-        ["実質利回り（融資前）",m=>m.netYield,m=>pct(m.netYield),"max"],
-        ["CCR（融資後）",m=>m.ccr,m=>pct(m.ccr),"max"],
-        ["自己資金回収年数",m=>m.payback,m=>Number.isFinite(m.payback)?m.payback.toFixed(1)+" 年":m.cf<=0?"回収不可":"-","min"]
+        ["自己資金",m=>m.equity,m=>compareYen(m.equity),null],
+        ["年間CF",m=>m.cf,m=>compareYen(m.cf),"max"],
+        ["表面利回り",m=>m.grossYield,m=>comparePct(m.grossYield),"max"],
+        ["実質利回り（融資前）",m=>m.netYield,m=>comparePct(m.netYield),"max"],
+        ["CCR（融資後）",m=>m.ccr,m=>comparePct(m.ccr),"max"],
+        ["自己資金回収年数",m=>m.payback,m=>compareYears(m),"min"]
       ];
       const allMetrics=items.map(p=>metrics(p.inputs));
       rows.forEach(([label,getValue,format,bestDirection])=>{
