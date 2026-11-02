@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>空き家投資 収支計算ツール V5.1（テスト版）</title>
+  <style>
+    :root{
+      --bg:#f5f7fa; --card:#fff; --text:#1f2937; --muted:#6b7280;
+      --line:#e5e7eb; --accent:#2563eb; --good:#15803d; --warn:#b45309;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+      background:var(--bg); color:var(--text);
+    }
+    .wrap{max-width:900px;margin:0 auto;padding:24px 16px 48px}
+    h1{font-size:28px;margin:0 0 8px}
+    .lead{margin:0 0 24px;color:var(--muted);line-height:1.6}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .card{
+      background:var(--card); border:1px solid var(--line); border-radius:16px;
+      padding:18px; box-shadow:0 4px 14px rgba(0,0,0,.04)
+    }
+    .card h2{font-size:18px;margin:0 0 16px}
+    .field{margin-bottom:14px}
+    label{display:block;font-size:14px;font-weight:600;margin-bottom:6px}
+    .input-wrap{display:flex;align-items:center;gap:8px}
+    input, select{
+      width:100%; padding:12px 13px; border:1px solid #cfd5dd; border-radius:10px;
+      font-size:16px; outline:none; background:#fff
+    }
+    input:focus, select:focus{
+      border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,.12)
+    }
+    .unit{min-width:42px;color:var(--muted);font-size:14px}
+    .property-summary{
+      border:1px solid var(--line); border-radius:12px; padding:14px;
+      margin-bottom:14px; background:#fafafa
+    }
+    .property-summary .name{font-size:13px;color:var(--muted);margin-bottom:6px}
+    .property-title{font-size:20px;font-weight:700;margin-bottom:4px}
+    .property-location{font-size:14px;color:var(--muted)}
+    .results{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    .result{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fafafa}
+    .result .name{font-size:13px;color:var(--muted);margin-bottom:6px}
+    .result .value{font-size:22px;font-weight:700;word-break:break-word}
+    .good{color:var(--good)} .warn{color:var(--warn)}
+  .formula{
+  margin-top:16px;
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.8;
+  text-align:left;
+}
+
+.formula .note{
+  margin-top:10px;
+}
+    button{
+      width:100%; margin-top:8px; padding:12px; border:0; border-radius:10px;
+      background:#e5e7eb; color:#374151; font-size:15px; cursor:pointer
+    }
+    button:hover{background:#dbe0e6}
+    @media(max-width:700px){
+      .grid{grid-template-columns:1fr}
+      .results{grid-template-columns:1fr}
+      h1{font-size:24px}
+    }
+    .hint{
+  font-size:11px;
+  color:var(--muted);
+  margin-top:4px;
+  line-height:1.5;
+}
+
+    .saved-section{margin-top:18px}
+    .saved-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .saved-actions button{width:auto;margin:0;background:var(--accent);color:white}
+    .saved-actions button:hover{background:#1d4ed8}
+    .saved-list{display:grid;gap:10px;margin-top:14px}
+    .saved-item{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fafafa}
+    .saved-item-head{display:flex;gap:10px;align-items:flex-start;justify-content:space-between}
+    .saved-item-title{font-weight:700;overflow-wrap:anywhere}
+    .saved-item-meta{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.6}
+    .saved-item-buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .saved-item-buttons button{width:auto;margin:0;padding:8px 12px;font-size:13px}
+    .saved-item-buttons .danger{color:#b91c1c;background:#fee2e2}
+    .compare-wrap{overflow-x:auto;margin-top:12px}
+    .compare-table{border-collapse:collapse;width:100%;min-width:460px;font-size:13px}
+    .compare-table th,.compare-table td{padding:10px;border:1px solid var(--line);text-align:right;white-space:nowrap}
+    .compare-table th:first-child,.compare-table td:first-child{text-align:left}
+    .compare-table thead{background:#eff6ff}
+    /* 横スクロールしても指標名を表示し続ける */
+    .compare-table{min-width:660px;border-collapse:separate;border-spacing:0}
+    .compare-table th:first-child{position:sticky;left:0;z-index:2;background:#fff;min-width:165px;max-width:165px;white-space:normal;box-shadow:2px 0 4px rgba(0,0,0,.06)}
+    .compare-table thead th:first-child{z-index:3;background:#eff6ff}
+    .compare-table td.best-value{background:#ecfdf5;color:#166534;font-weight:700}
+    .compare-wrap{-webkit-overflow-scrolling:touch}
+    .compare-help{font-size:12px;color:var(--muted);margin-top:6px}
+    .status-text{font-size:13px;color:var(--muted);line-height:1.6;margin-top:8px}
+    @media(max-width:700px){
+      .saved-actions button{width:100%}
+      .saved-item-buttons button{flex:1}
+      /* スマホ：左端の指標列をコンパクトに固定し、物件列を横スクロール */
+      .compare-table{width:max-content;min-width:0;table-layout:fixed;font-size:12px}
+      .compare-table th,.compare-table td{padding:10px 7px}
+      .compare-table th:first-child{
+        width:112px;min-width:112px;max-width:112px;
+        white-space:normal;overflow-wrap:anywhere;line-height:1.45
+      }
+      .compare-table th:not(:first-child),.compare-table td:not(:first-child){
+        width:126px;min-width:126px;max-width:126px;
+        white-space:nowrap
+      }
+    }
+
+    .simulation-section,.legal-section{margin-top:18px}
+    .sim-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0}
+    .sim-chart{display:block;width:100%;height:auto;background:white;border:1px solid var(--line);border-radius:12px}
+    .sim-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:12px}
+    .sim-table{border-collapse:collapse;min-width:780px;width:100%;font-size:12px}
+    .sim-table th,.sim-table td{border:1px solid var(--line);padding:9px;text-align:right;white-space:nowrap}
+    .sim-table th:first-child,.sim-table td:first-child{text-align:left}
+    .sim-table thead{background:#eff6ff}
+    .validation{color:#b91c1c;font-size:13px;line-height:1.6;margin:10px 0;white-space:pre-line}
+    .legal-section p{font-size:13px;color:var(--muted);line-height:1.8}
+    @media(max-width:700px){.sim-summary{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>空き家投資 収支計算ツール</h1>
+    <p class="lead">物件名と地域を登録し、価格や家賃、年間経費、空室率から収支を自動計算します。</p>
+
+    <div class="grid">
+      <section class="card">
+        <h2>入力</h2>
+
+        <div class="field">
+          <label for="propertyName">物件名</label>
+          <div class="input-wrap">
+            <input id="propertyName" type="text" placeholder="">
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="prefecture">都道府県</label>
+          <div class="input-wrap">
+            <select id="prefecture">
+              <option value="">選択してください</option>
+              <option>北海道</option><option>青森県</option><option>岩手県</option><option>宮城県</option><option>秋田県</option><option>山形県</option><option>福島県</option>
+              <option>茨城県</option><option>栃木県</option><option>群馬県</option><option>埼玉県</option><option>千葉県</option><option>東京都</option><option>神奈川県</option>
+              <option>新潟県</option><option>富山県</option><option>石川県</option><option>福井県</option><option>山梨県</option><option>長野県</option>
+              <option>岐阜県</option><option>静岡県</option><option>愛知県</option><option>三重県</option>
+              <option>滋賀県</option><option>京都府</option><option>大阪府</option><option>兵庫県</option><option>奈良県</option><option>和歌山県</option>
+              <option>鳥取県</option><option>島根県</option><option>岡山県</option><option>広島県</option><option>山口県</option>
+              <option>徳島県</option><option>香川県</option><option>愛媛県</option><option>高知県</option>
+              <option>福岡県</option><option>佐賀県</option><option>長崎県</option><option>熊本県</option><option>大分県</option><option>宮崎県</option><option>鹿児島県</option><option>沖縄県</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="city">市区町村</label>
+          <div class="input-wrap">
+            <input id="city" type="text" placeholder="">
+          </div>
+        </div>
+<div class="field">
+  <label for="builtYear">築年（西暦）</label>
+  <div class="input-wrap">
+    <input id="builtYear" type="number">
+    <span class="unit">年</span>
+  </div>
+</div>
+        <div class="field">
+  <label for="landArea">土地面積</label>
+  <div class="input-wrap">
+    <input id="landArea" type="number" min="0" step="0.01">
+    <span class="unit">㎡</span>
+  </div>
+</div>
+
+<div class="field">
+  <label for="buildingArea">建物面積</label>
+  <div class="input-wrap">
+    <input id="buildingArea" type="number" min="0" step="0.01">
+    <span class="unit">㎡</span>
+  </div>
+</div>
+        <div class="field">
+          <label for="purchase">購入価格</label>
+          <div class="input-wrap"><input id="purchase" type="number" min="0" ><span class="unit">円</span></div>
+        </div>
+
+        <div class="field">
+          <label for="fees">諸費用</label>
+          <div class="input-wrap"><input id="fees" type="number" min="0"><span class="unit">円</span></div>
+        </div>
+
+        <div class="field">
+          <label for="renovation">リフォーム費</label>
+          <div class="input-wrap"><input id="renovation" type="number" min="0"><span class="unit">円</span></div>
+        </div>
+        <div class="field">
+  <label for="loanAmount">借入額</label>
+  <div class="input-wrap">
+    <input id="loanAmount" type="number" min="0">
+    <span class="unit">円</span>
+  </div>
+</div>
+
+<div class="field">
+  <label for="interestRate">金利（年利）</label>
+  <div class="input-wrap">
+    <input id="interestRate" type="number" min="0" step="0.01">
+    <span class="unit">%</span>
+  </div>
+    <div class="hint">金融機関の提示金利、または想定金利を入力してください。</div>
+</div>
+
+<div class="field">
+  <label for="loanYears">返済期間</label>
+  <div class="input-wrap">
+    <input id="loanYears" type="number" min="1">
+    <span class="unit">年</span>
+  </div>
+</div>
+
+        <div class="field">
+          <label for="rent">月額家賃</label>
+          <div class="input-wrap"><input id="rent" type="number" min="0"><span class="unit">円</span></div>
+        </div>
+
+        <div class="field">
+          <label for="tax">固定資産税（年間）</label>
+          <div class="input-wrap"><input id="tax" type="number" min="0"><span class="unit">円</span></div>
+        </div>
+
+        <div class="field">
+          <label for="insurance">火災保険（年間）</label>
+          <div class="input-wrap"><input id="insurance" type="number" min="0"><span class="unit">円</span></div>
+        </div>
+
+        <div class="field">
+          <label for="maintenance">年間修繕費</label>
+          <div class="input-wrap"><input id="maintenance" type="number" min="0"><span class="unit">円</span></div>
+        </div>
+
+        <div class="field">
+          <label for="vacancy">空室率</label>
+          <div class="input-wrap"><input id="vacancy" type="number" min="0" max="100" step="0.1"><span class="unit">%</span></div>
+        </div>
+        
+
+        <h2 style="margin-top:22px">10年間の追加条件（任意）</h2>
+        <div class="field"><label for="rentDecline">年間家賃下落率</label><div class="input-wrap"><input id="rentDecline" type="number" min="0" max="100" step="0.1" placeholder="0"><span class="unit">%</span></div><div class="hint">2年目以降、前年の家賃から毎年下落する割合です。空欄なら0%。</div></div>
+        <div class="field"><label for="majorRepairYear">大型修繕の実施年</label><div class="input-wrap"><input id="majorRepairYear" type="number" min="1" max="10" step="1" placeholder="例：5"><span class="unit">年目</span></div></div>
+        <div class="field"><label for="majorRepairCost">大型修繕費（1回）</label><div class="input-wrap"><input id="majorRepairCost" type="number" min="0" step="1" placeholder="例：800000"><span class="unit">円</span></div><div class="hint">指定した年だけ差し引きます。通常の年間修繕費とは別です。</div></div>
+        <div class="validation" id="validationMessage" role="alert"></div>
+        <button id="resetBtn" type="button">入力内容をクリア</button>
+      </section>
+
+      <section class="card">
+        <h2>計算結果</h2>
+
+        <div class="property-summary">
+          <div class="name">物件情報</div>
+          <div class="property-title" id="propertyTitle">物件名未入力</div>
+          <div class="property-location" id="propertyLocation">地域未入力</div>
+        </div>
+
+        <div class="results">
+          <div class="result"><div class="name">総投下資金</div><div class="value" id="totalInvestment">-</div></div>
+          <div class="result"><div class="name">築年数</div><div class="value" id="buildingAge">-</div></div>
+          <div class="result"><div class="name">土地面積</div><div class="value" id="landAreaResult">-</div></div>
+          <div class="result"><div class="name">建物面積</div><div class="value" id="buildingAreaResult">-</div></div>
+          <div class="result"><div class="name">満室想定 年間家賃</div><div class="value" id="grossRent">-</div></div>
+          <div class="result"><div class="name">空室考慮後 年間家賃収入</div><div class="value" id="effectiveRent">-</div></div>
+          <div class="result"><div class="name">年間経費</div><div class="value" id="annualExpenses">-</div></div>
+          <div class="result">
+  <div class="name">月間ローン返済</div>
+  <div class="value" id="monthlyLoanPayment">-</div>
+</div>
+
+<div class="result">
+  <div class="name">年間ローン返済</div>
+  <div class="value" id="annualLoanPayment">-</div>
+</div>
+          <div class="result"><div class="name">年間キャッシュフロー</div><div class="value good" id="cashFlow">-</div></div>
+          <div class="result"><div class="name">自己資金</div><div class="value" id="equity">-</div></div>
+          <div class="result"><div class="name">CCR（自己資金利回り）</div><div class="value" id="ccr">-</div></div>
+          <div class="result"><div class="name">表面利回り</div><div class="value" id="grossYield">-</div></div>
+          <div class="result"><div class="name">実質利回り(融資前)</div><div class="value" id="netYield">-</div></div>
+          <div class="result"><div class="name">初年度CFによる単純回収年数</div><div class="value" id="payback">-</div></div>
+        </div>
+
+        <div class="formula">
+  <div>表面利回り ＝ 満室想定年間家賃 ÷ 購入価格</div>
+  <div>実質利回り（融資前）＝（空室考慮後年間家賃収入 − 年間経費）÷ 総投資資金</div>
+  <div>CCR（自己資金利回り）＝ 年間キャッシュフロー ÷ 自己資金</div>
+  <div>年間キャッシュフロー ＝ 空室考慮後年間家賃収入 − 年間経費 − 年間ローン返済</div>
+  <div>初年度CFによる単純回収年数 ＝ 自己資金 ÷ 初年度年間キャッシュフロー（家賃下落・途中完済等を織り込まない参考値）</div>
+  <div class="note">※上の年間指標は初年度の数値です。大型修繕費は指定年のみ計上。所得税・住民税・管理委託費・募集広告費・突発修繕などは含めていません。</div>
+</div>
+      </section>
+    </div>
+
+    <section class="card simulation-section" aria-labelledby="simHead">
+      <h2 id="simHead">10年間の収支シミュレーション</h2>
+      <p class="status-text">家賃下落率と大型修繕費を反映した、税引前・売却前の参考試算です。ローンは元利均等返済で月ごとに計算します。</p>
+      <div class="sim-summary">
+        <div class="result"><div class="name">10年間の累計CF</div><div class="value" id="simCumulative">-</div></div>
+        <div class="result"><div class="name">年間平均CF</div><div class="value" id="simAverage">-</div></div>
+        <div class="result"><div class="name">10年後ローン残高</div><div class="value" id="simBalance">-</div></div>
+        <div class="result"><div class="name">10年間の累計CF − 初期自己資金</div><div class="value" id="simAfterEquity">-</div></div>
+        <div class="result"><div class="name">10年間のCFによる自己資金回収年</div><div class="value" id="simRecoveryYear">-</div></div>
+      </div>
+      <svg id="simGraph" class="sim-chart" viewBox="0 0 800 280" role="img" aria-label="累計キャッシュフローの推移"></svg>
+      <div class="sim-scroll"><table class="sim-table"><thead><tr><th>年</th><th>家賃収入</th><th>通常経費</th><th>大型修繕</th><th>返済</th><th>年間CF</th><th>累計CF</th><th>借入残高</th></tr></thead><tbody id="simBody"></tbody></table></div>
+      <p class="status-text">※「累計CF − 初期自己資金」は物件の売却価値・残存価値を含まない、家賃収支のみの参考値です。自己資金回収年は各年末の累計CFで判定します。累計CFは初期自己資金を差し引く前の金額。所得税・住民税、管理委託費、募集費、突発修繕、家賃以外の費用、売却損益等は未反映です。初年度の家賃下落はありません。</p>
+    </section>
+    <section class="card legal-section">
+      <h2>ご利用上の注意</h2>
+      <p>本ツールは不動産投資の収支を概算する参考シミュレーターです。計算結果は入力条件と一定の仮定に基づき、将来の収益・投資成果を保証しません。購入・売却・融資等は利用者自身で十分に検討し、必要に応じて専門家にご相談ください。</p>
+      <p>本ツールは正確な計算に努めますが、不具合や未反映の費用があり得ます。画面に示す前提・除外項目を確認してください。利用者に法律上認められる権利を制限する趣旨ではありません。</p>
+      <p>保存した物件はこのブラウザ内に保持され、端末間で同期されません。ブラウザデータの消去などで失われる場合があります。本ツールは入力内容をサーバーへ送信する機能を備えていません（外部ホスティングや追加サービスの取扱いは別途確認してください）。</p>
+    </section>
+    <section class="card saved-section" aria-labelledby="savedHeading">
+      <h2 id="savedHeading">保存した物件・比較</h2>
+      <div class="saved-actions"><button id="savePropertyBtn" type="button">現在の物件を保存</button></div>
+      <p class="status-text">この端末のブラウザ内に保存します。PCとスマホでは共有されません。ブラウザのデータ削除などで失われる場合があります。</p>
+      <div id="storageStatus" class="status-text" role="status" aria-live="polite"></div>
+      <div id="savedList" class="saved-list"></div>
+      <h2 style="margin-top:24px">物件比較（最大3件）</h2>
+      <p class="status-text">保存済み物件の「比較に追加」を選ぶと、収益指標を並べて比較できます。</p>
+      <p class="compare-help">スマホでは物件列を左右にスワイプできます。左端の指標名は固定されます。金額は万円単位で短縮表示し、薄緑は最も良い値を示します。</p>
+      <div id="compareTable" class="compare-wrap"></div>
+    </section>
+  </div>
+
+  <script>
+    const ids = ["purchase","fees","renovation","loanAmount","interestRate","loanYears","rent","tax","insurance","maintenance","vacancy"];
+
+    const yen = n => Number.isFinite(n) ? Math.round(n).toLocaleString("ja-JP") + " 円" : "-";
+    const pct = n => Number.isFinite(n) ? n.toFixed(2) + " %" : "-";
+
+    function val(id){
+      const n = Number(document.getElementById(id).value);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    // 計算の単一エンジン。保存物件と画面表示の双方で使用する。
+    const additionalIds=["rentDecline","majorRepairYear","majorRepairCost"];
+    function readInputs(){
+      const obj={};
+      ["propertyName","prefecture","city","builtYear","landArea","buildingArea",...ids,...additionalIds].forEach(id=>obj[id]=document.getElementById(id).value);
+      return obj;
+    }
+    function calcModel(inp){
+      const problems=[];
+      const numbers={};
+      const fieldNames={
+        purchase:"購入価格",fees:"諸費用",renovation:"リフォーム費",
+        loanAmount:"借入額",interestRate:"金利（年利）",loanYears:"返済期間",
+        rent:"月額家賃",tax:"固定資産税",insurance:"火災保険",
+        maintenance:"年間修繕費",vacancy:"空室率",
+        rentDecline:"年間家賃下落率",majorRepairYear:"大型修繕の実施年",
+        majorRepairCost:"大型修繕費"
+      };
+      [...ids,...additionalIds].forEach(id=>{
+        const raw=inp[id]??"";
+        const v=raw===""?0:Number(raw);
+        if(!Number.isFinite(v)){
+          problems.push(fieldNames[id]+"は有効な数値で入力してください。");
+        } else if(v<0){
+          problems.push(id==="purchase"
+            ? "購入価格は0円より大きい値を入力してください。"
+            : fieldNames[id]+"は0以上の数値を入力してください。");
+        }
+        numbers[id]=Number.isFinite(v)?v:0;
+      });
+      const n=numbers;
+      if(n.vacancy>100)problems.push("空室率は0〜100％にしてください。");
+      if(n.rentDecline>100)problems.push("年間家賃下落率は0〜100％にしてください。");
+      if(n.loanAmount>0 && !(n.loanYears>0))problems.push("借入額がある場合、返済期間を入力してください。");
+      if(n.loanYears>0 && (!Number.isInteger(n.loanYears)||n.loanYears>100))problems.push("返済期間は1〜100の整数年にしてください。");
+      if(n.majorRepairCost>0 && (!Number.isInteger(n.majorRepairYear)||n.majorRepairYear<1||n.majorRepairYear>10))problems.push("大型修繕費を入力する場合、実施年を1〜10年目から選んでください。");
+      if(n.majorRepairYear>0 && (!Number.isInteger(n.majorRepairYear)||n.majorRepairYear>10))problems.push("大型修繕の実施年は1〜10の整数年にしてください。");
+      const total=n.purchase+n.fees+n.renovation;
+      if(n.purchase>0 && n.loanAmount>total)problems.push("借入額が総投下資金を超えています。融資条件を確認してください。");
+      if((inp.purchase??"")==="" || (inp.rent??"")==="")problems.push("購入価格と月額家賃を入力してください。");
+      if(n.purchase===0 && (inp.purchase??"")!=="")problems.push("購入価格は0円より大きい値を入力してください。");
+      if(problems.length)return {valid:false,problems};
+      const months=n.loanYears*12,rate=n.interestRate/1200;
+      let monthly=0;
+      if(n.loanAmount>0){
+        monthly=rate>0 ? n.loanAmount*rate/(-Math.expm1(-months*Math.log1p(rate))) : n.loanAmount/months;
+      }
+      const gross=n.rent*12,expenses=n.tax+n.insurance+n.maintenance;
+      const effective=gross*(1-n.vacancy/100);
+      const equity=total-n.loanAmount;
+      let balance=n.loanAmount,cumulative=0;
+      const years=[];
+      for(let year=1;year<=10;year++){
+        let repayment=0;
+        for(let j=0;j<12;j++){
+          const month=(year-1)*12+j;
+          if(month>=months||balance<=1e-7)break;
+          const interest=balance*rate;
+          const due=Math.min(monthly,balance+interest);
+          repayment+=due;balance=Math.max(0,balance+interest-due);
+        }
+        const annualRent=effective*Math.pow(1-n.rentDecline/100,year-1);
+        const majorRepair=year===n.majorRepairYear?n.majorRepairCost:0;
+        const cf=annualRent-expenses-majorRepair-repayment;
+        cumulative+=cf;
+        years.push({year,annualRent,expenses,majorRepair,repayment,cf,cumulative,balance});
+      }
+      const first=years[0];
+      const recoveryYear=equity>0
+        ? (years.find(r=>r.cumulative>=equity-1e-7)?.year ?? null)
+        : null;
+      return {valid:true,problems:[],total,equity,gross,effective,expenses,monthly,
+        annualPayment:first.repayment,cf:first.cf,years,cumulative,balance,recoveryYear,
+        grossYield:gross/n.purchase*100,netYield:(effective-expenses)/total*100,
+        ccr:equity>0?first.cf/equity*100:NaN,
+        payback:equity>0&&first.cf>0?equity/first.cf:NaN};
+    }
+    function renderSimulation(model){
+      const graph=document.getElementById("simGraph"),tbody=document.getElementById("simBody");
+      graph.replaceChildren();tbody.replaceChildren();
+      const fields=["simCumulative","simAverage","simBalance","simAfterEquity","simRecoveryYear"];
+      if(!model.valid){fields.forEach(id=>document.getElementById(id).textContent="-");return;}
+      document.getElementById("simCumulative").textContent=yen(model.cumulative);
+      document.getElementById("simAverage").textContent=yen(model.cumulative/10);
+      document.getElementById("simBalance").textContent=yen(model.balance);
+      const afterEquity=model.cumulative-model.equity;
+      const netNode=document.getElementById("simAfterEquity");
+      netNode.textContent=yen(afterEquity);
+      netNode.className="value "+(afterEquity<0?"warn":"good");
+      document.getElementById("simRecoveryYear").textContent=model.equity<=0
+        ? "自己資金0円（判定対象外）"
+        : model.recoveryYear===null?"10年以内に未回収":model.recoveryYear+"年目";
+      for(const r of model.years){
+        const tr=document.createElement("tr");
+        [r.year+"年目",yen(r.annualRent),yen(r.expenses),yen(r.majorRepair),yen(r.repayment),yen(r.cf),yen(r.cumulative),yen(r.balance)].forEach(v=>{
+          const td=document.createElement("td");td.textContent=v;tr.append(td);
+        });tbody.append(tr);
+      }
+      const NS="http://www.w3.org/2000/svg";
+      const add=(tag,attrs,content)=>{const e=document.createElementNS(NS,tag);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,String(v)));if(content!==undefined)e.textContent=content;graph.append(e);};
+      const values=[0,...model.years.map(r=>r.cumulative/10000)];
+      let min=Math.min(...values),max=Math.max(...values);if(max-min<1){min-=1;max+=1;}
+      const pad=(max-min)*0.1;min-=pad;max+=pad;
+      const y=v=>236-(v-min)/(max-min)*205,x=i=>75+i*69;
+      for(let t=0;t<=4;t++){const v=min+(max-min)*t/4,yy=y(v);
+        add("line",{x1:75,x2:767,y1:yy,y2:yy,stroke:"#e5e7eb"});
+        add("text",{x:69,y:yy+4,"text-anchor":"end","font-size":12,fill:"#6b7280"},Math.round(v).toLocaleString("ja-JP"));
+      }
+      add("line",{x1:75,x2:767,y1:y(0),y2:y(0),stroke:"#9ca3af","stroke-width":1.5});
+      add("polyline",{points:model.years.map(r=>x(r.year)+","+y(r.cumulative/10000)).join(" "),fill:"none",stroke:"#15803d","stroke-width":3});
+      model.years.forEach(r=>{add("circle",{cx:x(r.year),cy:y(r.cumulative/10000),r:4,fill:"#15803d"});
+        add("text",{x:x(r.year),y:262,"text-anchor":"middle","font-size":12,fill:"#6b7280"},String(r.year));});
+      add("text",{x:10,y:17,"font-size":12,fill:"#6b7280"},"累計CF（万円）");
+    }
+    function calculate(){
+      const inp=readInputs(),m=calcModel(inp);
+      document.getElementById("propertyTitle").textContent=inp.propertyName.trim()||"物件名未入力";
+      document.getElementById("propertyLocation").textContent=[inp.prefecture,inp.city].filter(Boolean).join(" ")||"地域未入力";
+      const age=Number(inp.builtYear);
+      document.getElementById("buildingAge").textContent=age>0?(new Date().getFullYear()-age)+" 年":"-";
+      ["landArea","buildingArea"].forEach(id=>document.getElementById(id+"Result").textContent=Number(inp[id])>0?Number(inp[id])+" ㎡":"-");
+      document.getElementById("validationMessage").textContent=m.problems.join("\n");
+      const display={totalInvestment:m.total,grossRent:m.gross,effectiveRent:m.effective,annualExpenses:m.expenses,
+        monthlyLoanPayment:m.monthly,annualLoanPayment:m.annualPayment,cashFlow:m.cf,equity:m.equity};
+      Object.entries(display).forEach(([id,v])=>document.getElementById(id).textContent=m.valid?yen(v):"-");
+      ["grossYield","netYield","ccr"].forEach(id=>document.getElementById(id).textContent=m.valid?pct(m[id]):"-");
+      document.getElementById("payback").textContent=!m.valid?"-":Number.isFinite(m.payback)?m.payback.toFixed(1)+" 年":m.cf<=0?"回収不可":"-";
+      document.getElementById("cashFlow").className="value "+(m.valid&&m.cf<0?"warn":"good");
+      renderSimulation(m);
+    }
+
+    [...ids,...additionalIds].forEach(id => document.getElementById(id).addEventListener("input", calculate));
+    ["propertyName","city"].forEach(id => document.getElementById(id).addEventListener("input", calculate));
+    document.getElementById("prefecture").addEventListener("change", calculate);
+    document.getElementById("builtYear").addEventListener("input", calculate);
+    document.getElementById("landArea").addEventListener("input", calculate);
+    document.getElementById("buildingArea").addEventListener("input", calculate);
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      document.getElementById("propertyName").value = "";
+      document.getElementById("prefecture").value = "";
+      document.getElementById("city").value = "";
+      document.getElementById("builtYear").value = "";
+      document.getElementById("landArea").value = "";
+      document.getElementById("buildingArea").value = "";
+      document.getElementById("purchase").value = "";
+      document.getElementById("fees").value = "";
+      document.getElementById("renovation").value = "";
+      ["loanAmount","interestRate","loanYears"].forEach(id => document.getElementById(id).value = "");
+      document.getElementById("rent").value = "";
+      document.getElementById("tax").value = "";
+      document.getElementById("insurance").value = "";
+      document.getElementById("maintenance").value = "";
+      document.getElementById("vacancy").value = "";
+      additionalIds.forEach(id=>document.getElementById(id).value="");
+      calculate();
+    });
+
+    calculate();
+
+    // 保存データは入力値だけを保持し、比較時には現在の計算式で再計算します。
+    const storageKey = "akiya-calculator-properties-v1";
+    const fieldIds = ["propertyName","prefecture","city","builtYear","landArea","buildingArea", ...ids, ...additionalIds];
+    let savedProperties = [];
+    let selectedCompareIds = [];
+    const statusNode = document.getElementById("storageStatus");
+
+    function showStatus(message){ statusNode.textContent = message; }
+    function getInputs(){
+      const inputs = {};
+      fieldIds.forEach(id => inputs[id] = document.getElementById(id).value);
+      return inputs;
+    }
+    function setInputs(inputs){
+      fieldIds.forEach(id => document.getElementById(id).value = inputs[id] ?? "");
+      calculate();
+      window.scrollTo({top:0,behavior:"smooth"});
+    }
+    function loadSaved(){
+      try {
+        const data = JSON.parse(localStorage.getItem(storageKey) || "[]");
+        savedProperties = Array.isArray(data) ? data.filter(p => p && typeof p.id === "string" && p.inputs && typeof p.inputs === "object") : [];
+      } catch(e){ savedProperties = []; showStatus("保存データを読み込めませんでした。ブラウザの保存設定をご確認ください。"); }
+    }
+    function persistSaved(){
+      try { localStorage.setItem(storageKey, JSON.stringify(savedProperties)); return true; }
+      catch(e){ showStatus("保存できませんでした。ブラウザの空き容量・プライベートモード等をご確認ください。"); return false; }
+    }
+    function numFrom(inputs,id){
+      const n=Number(inputs[id]);return Number.isFinite(n) ? Math.max(0,n) : 0;
+    }
+    function metrics(inputs){
+      const m=calcModel(inputs);
+      if(!m.valid)return {valid:false,cf:NaN,equity:NaN,grossYield:NaN,netYield:NaN,ccr:NaN,payback:NaN};
+      return {valid:true,cf:m.cf,equity:m.equity,grossYield:m.grossYield,netYield:m.netYield,ccr:m.ccr,payback:m.payback};
+    }
+    function el(tag,cls,txt){
+      const node=document.createElement(tag);
+      if(cls)node.className=cls;
+      if(txt!==undefined)node.textContent=txt;
+      return node;
+    }
+    function propertyLabel(p){return (p.inputs.propertyName||"名称未設定").trim()||"名称未設定";}
+    function renderSaved(){
+      const list=document.getElementById("savedList");list.replaceChildren();
+      if(!savedProperties.length){list.append(el("p","status-text","まだ保存した物件はありません。"));}
+      savedProperties.forEach(p=>{
+        const m=metrics(p.inputs);
+        const item=el("div","saved-item");
+        const head=el("div","saved-item-head");
+        const left=el("div");
+        left.append(el("div","saved-item-title",propertyLabel(p)));
+        left.append(el("div","saved-item-meta",[p.inputs.prefecture,p.inputs.city].filter(Boolean).join(" ")||"地域未入力"));
+        left.append(el("div","saved-item-meta","年間CF: "+yen(m.cf)+" / CCR: "+pct(m.ccr)));
+        head.append(left);
+        const checkLabel=el("label",null,"比較に追加 ");
+        checkLabel.style.cssText="display:flex;align-items:center;gap:5px;font-size:12px;white-space:nowrap";
+        const check=document.createElement("input");check.type="checkbox";check.style.width="auto";
+        check.checked=selectedCompareIds.includes(p.id);
+        check.addEventListener("change",()=>{
+          if(check.checked && selectedCompareIds.length>=3){check.checked=false;showStatus("比較できるのは最大3件です。");return;}
+          selectedCompareIds=check.checked?[...selectedCompareIds,p.id]:selectedCompareIds.filter(id=>id!==p.id);
+          showStatus("");renderCompare();
+        });
+        checkLabel.prepend(check);head.append(checkLabel);item.append(head);
+        const actions=el("div","saved-item-buttons");
+        const restore=el("button",null,"呼び出す");restore.type="button";
+        restore.addEventListener("click",()=>{setInputs(p.inputs);showStatus("「"+propertyLabel(p)+"」を入力欄に呼び出しました。変更後は改めて保存してください。");});
+        const remove=el("button","danger","削除");remove.type="button";
+        remove.addEventListener("click",()=>{
+          if(!confirm("「"+propertyLabel(p)+"」を削除しますか？"))return;
+          const previous=savedProperties;
+          savedProperties=savedProperties.filter(x=>x.id!==p.id);
+          if(!persistSaved()){savedProperties=previous;return;}
+          selectedCompareIds=selectedCompareIds.filter(id=>id!==p.id);
+          showStatus("物件を削除しました。");renderSaved();
+        });
+        actions.append(restore,remove);item.append(actions);list.append(item);
+      });
+      renderCompare();
+    }
+    // 比較表のみ金額を短縮。元の計算結果や保存データは変更しない。
+    function compareYen(n){
+      if(!Number.isFinite(n))return "-";
+      const rounded=Math.round(n);
+      if(Math.abs(rounded)>=10000){
+        const man=rounded/10000;
+        return (Number.isInteger(man)?man.toLocaleString("ja-JP"):man.toLocaleString("ja-JP",{maximumFractionDigits:1}))+"万円";
+      }
+      return rounded.toLocaleString("ja-JP")+"円";
+    }
+    function comparePct(n){return Number.isFinite(n)?n.toFixed(1)+"%":"-";}
+    function compareYears(m){return Number.isFinite(m.payback)?m.payback.toFixed(1)+"年":!m.valid?"-":m.cf<=0?"回収不可":"-";}
+    function renderCompare(){
+      const host=document.getElementById("compareTable");host.replaceChildren();
+      const items=selectedCompareIds.map(id=>savedProperties.find(p=>p.id===id)).filter(Boolean);
+      if(!items.length){host.append(el("p","status-text","比較する物件を選択してください。"));return;}
+      const table=el("table","compare-table"),thead=el("thead"),hrow=el("tr");
+      hrow.append(el("th",null,"指標"));items.forEach(p=>hrow.append(el("th",null,propertyLabel(p))));
+      thead.append(hrow);table.append(thead);
+      const tbody=el("tbody");
+      const rows=[
+        ["自己資金",m=>m.equity,m=>compareYen(m.equity),null],
+        ["年間CF",m=>m.cf,m=>compareYen(m.cf),"max"],
+        ["表面利回り",m=>m.grossYield,m=>comparePct(m.grossYield),"max"],
+        ["実質利回り",m=>m.netYield,m=>comparePct(m.netYield),"max"],
+        ["CCR（融資後）",m=>m.ccr,m=>comparePct(m.ccr),"max"],
+        ["自己資金回収年数",m=>m.payback,m=>compareYears(m),"min"]
+      ];
+      const allMetrics=items.map(p=>metrics(p.inputs));
+      rows.forEach(([label,getValue,format,bestDirection])=>{
+        const tr=el("tr");tr.append(el("th",null,label));
+        const values=allMetrics.map(getValue);
+        const finiteValues=values.filter(Number.isFinite);
+        const best=finiteValues.length>=2 && bestDirection ? (bestDirection==="min"?Math.min(...finiteValues):Math.max(...finiteValues)) : null;
+        allMetrics.forEach((m,i)=>{
+          const td=el("td",null,format(m));
+          if(best!==null && Number.isFinite(values[i]) && Math.abs(values[i]-best)<1e-8)td.classList.add("best-value");
+          tr.append(td);
+        });
+        tbody.append(tr);
+      });
+      table.append(tbody);host.append(table);
+    }
+    document.getElementById("savePropertyBtn").addEventListener("click",()=>{
+      const inputs=getInputs();
+      if(!inputs.propertyName.trim()){showStatus("保存する前に物件名を入力してください。");document.getElementById("propertyName").focus();return;}
+      if(!calcModel(inputs).valid){showStatus("収支条件を確認してください。入力エラーがある物件は保存できません。");return;}
+      const entry={id:String(Date.now())+"-"+Math.random().toString(36).slice(2),inputs};
+      savedProperties.unshift(entry);
+      if(!persistSaved()){savedProperties.shift();return;}
+      showStatus("「"+propertyLabel(entry)+"」を保存しました。" );renderSaved();
+    });
+    loadSaved();renderSaved();
+  </script>
+</body>
+</html>
