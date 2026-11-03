@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>空き家投資 収支計算ツール</title>
+  <title>空き家投資 収支計算ツール V5.1（テスト版）</title>
   <style>
     :root{
       --bg:#f5f7fa; --card:#fff; --text:#1f2937; --muted:#6b7280;
@@ -115,16 +115,18 @@
         white-space:nowrap
       }
     }
-    .simulation-section{margin-top:18px}
-    .simulation-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:18px}
-    .simulation-summary .value{font-size:19px}
-    .simulation-chart{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:12px;background:#fff}
-    .simulation-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:14px}
-    .simulation-table{border-collapse:collapse;width:100%;min-width:680px;font-size:13px}
-    .simulation-table th,.simulation-table td{border:1px solid var(--line);padding:9px 10px;text-align:right;white-space:nowrap}
-    .simulation-table th:first-child,.simulation-table td:first-child{text-align:left}
-    .simulation-table thead{background:#eff6ff}
-    @media(max-width:700px){.simulation-summary{grid-template-columns:1fr}}
+
+    .simulation-section,.legal-section{margin-top:18px}
+    .sim-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0}
+    .sim-chart{display:block;width:100%;height:auto;background:white;border:1px solid var(--line);border-radius:12px}
+    .sim-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:12px}
+    .sim-table{border-collapse:collapse;min-width:780px;width:100%;font-size:12px}
+    .sim-table th,.sim-table td{border:1px solid var(--line);padding:9px;text-align:right;white-space:nowrap}
+    .sim-table th:first-child,.sim-table td:first-child{text-align:left}
+    .sim-table thead{background:#eff6ff}
+    .validation{color:#b91c1c;font-size:13px;line-height:1.6;margin:10px 0;white-space:pre-line}
+    .legal-section p{font-size:13px;color:var(--muted);line-height:1.8}
+    @media(max-width:700px){.sim-summary{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -253,6 +255,11 @@
         </div>
         
 
+        <h2 style="margin-top:22px">10年間の追加条件（任意）</h2>
+        <div class="field"><label for="rentDecline">年間家賃下落率</label><div class="input-wrap"><input id="rentDecline" type="number" min="0" max="100" step="0.1" placeholder="0"><span class="unit">%</span></div><div class="hint">2年目以降、前年の家賃から毎年下落する割合です。空欄なら0%。</div></div>
+        <div class="field"><label for="majorRepairYear">大型修繕の実施年</label><div class="input-wrap"><input id="majorRepairYear" type="number" min="1" max="10" step="1" placeholder="例：5"><span class="unit">年目</span></div></div>
+        <div class="field"><label for="majorRepairCost">大型修繕費（1回）</label><div class="input-wrap"><input id="majorRepairCost" type="number" min="0" step="1" placeholder="例：800000"><span class="unit">円</span></div><div class="hint">指定した年だけ差し引きます。通常の年間修繕費とは別です。</div></div>
+        <div class="validation" id="validationMessage" role="alert"></div>
         <button id="resetBtn" type="button">入力内容をクリア</button>
       </section>
 
@@ -287,7 +294,7 @@
           <div class="result"><div class="name">CCR（自己資金利回り）</div><div class="value" id="ccr">-</div></div>
           <div class="result"><div class="name">表面利回り</div><div class="value" id="grossYield">-</div></div>
           <div class="result"><div class="name">実質利回り(融資前)</div><div class="value" id="netYield">-</div></div>
-          <div class="result"><div class="name">自己資金回収年数</div><div class="value" id="payback">-</div></div>
+          <div class="result"><div class="name">初年度CFによる単純回収年数</div><div class="value" id="payback">-</div></div>
         </div>
 
         <div class="formula">
@@ -295,26 +302,32 @@
   <div>実質利回り（融資前）＝（空室考慮後年間家賃収入 − 年間経費）÷ 総投資資金</div>
   <div>CCR（自己資金利回り）＝ 年間キャッシュフロー ÷ 自己資金</div>
   <div>年間キャッシュフロー ＝ 空室考慮後年間家賃収入 − 年間経費 − 年間ローン返済</div>
-  <div>自己資金回収年数 ＝ 自己資金 ÷ 年間キャッシュフロー</div>
-  <div class="note">※所得税・住民税・管理委託費・募集広告費・突発修繕などは含めていません。</div>
+  <div>初年度CFによる単純回収年数 ＝ 自己資金 ÷ 初年度年間キャッシュフロー（家賃下落・途中完済等を織り込まない参考値）</div>
+  <div class="note">※上の年間指標は初年度の数値です。大型修繕費は指定年のみ計上。所得税・住民税・管理委託費・募集広告費・突発修繕などは含めていません。</div>
 </div>
       </section>
     </div>
 
-    <section class="card simulation-section" aria-labelledby="simulationHeading">
-      <h2 id="simulationHeading">10年間の収支シミュレーション</h2>
-      <p class="status-text">入力した家賃・空室率・年間経費が10年間一定と仮定した試算です。ローンは元利均等返済で、完済後は返済額が0円になります。</p>
-      <div class="simulation-summary">
-        <div class="result"><div class="name">10年間の累計CF</div><div class="value" id="tenYearCashFlow">-</div></div>
-        <div class="result"><div class="name">年間平均CF</div><div class="value" id="averageCashFlow">-</div></div>
-        <div class="result"><div class="name">10年後ローン残高</div><div class="value" id="tenYearLoanBalance">-</div></div>
+    <section class="card simulation-section" aria-labelledby="simHead">
+      <h2 id="simHead">10年間の収支シミュレーション</h2>
+      <p class="status-text">家賃下落率と大型修繕費を反映した、税引前・売却前の参考試算です。ローンは元利均等返済で月ごとに計算します。</p>
+      <div class="sim-summary">
+        <div class="result"><div class="name">10年間の累計CF</div><div class="value" id="simCumulative">-</div></div>
+        <div class="result"><div class="name">年間平均CF</div><div class="value" id="simAverage">-</div></div>
+        <div class="result"><div class="name">10年後ローン残高</div><div class="value" id="simBalance">-</div></div>
+        <div class="result"><div class="name">10年間の累計CF − 初期自己資金</div><div class="value" id="simAfterEquity">-</div></div>
+        <div class="result"><div class="name">10年間のCFによる自己資金回収年</div><div class="value" id="simRecoveryYear">-</div></div>
       </div>
-      <svg id="simulationChart" class="simulation-chart" viewBox="0 0 800 280" role="img" aria-label="10年間の累計キャッシュフロー推移"></svg>
-      <p class="compare-help">グラフは累計キャッシュフロー（万円）。マイナスの場合は0円の線より下に表示します。</p>
-      <div class="simulation-table-wrap"><table class="simulation-table" id="simulationTable"><thead><tr><th>年</th><th>家賃収入</th><th>年間経費</th><th>ローン返済</th><th>年間CF</th><th>累計CF</th><th>ローン残高</th></tr></thead><tbody></tbody></table></div>
-      <p class="status-text">※税引前の概算です。家賃変動・経費変動・売却益・所得税・住民税・管理委託費・募集広告費・突発修繕・借入諸費用等は反映していません。累計CFは購入時の自己資金を差し引く前の金額です。</p>
+      <svg id="simGraph" class="sim-chart" viewBox="0 0 800 280" role="img" aria-label="累計キャッシュフローの推移"></svg>
+      <div class="sim-scroll"><table class="sim-table"><thead><tr><th>年</th><th>家賃収入</th><th>通常経費</th><th>大型修繕</th><th>返済</th><th>年間CF</th><th>累計CF</th><th>借入残高</th></tr></thead><tbody id="simBody"></tbody></table></div>
+      <p class="status-text">※「累計CF − 初期自己資金」は物件の売却価値・残存価値を含まない、家賃収支のみの参考値です。自己資金回収年は各年末の累計CFで判定します。累計CFは初期自己資金を差し引く前の金額。所得税・住民税、管理委託費、募集費、突発修繕、家賃以外の費用、売却損益等は未反映です。初年度の家賃下落はありません。</p>
     </section>
-
+    <section class="card legal-section">
+      <h2>ご利用上の注意</h2>
+      <p>本ツールは不動産投資の収支を概算する参考シミュレーターです。計算結果は入力条件と一定の仮定に基づき、将来の収益・投資成果を保証しません。購入・売却・融資等は利用者自身で十分に検討し、必要に応じて専門家にご相談ください。</p>
+      <p>本ツールは正確な計算に努めますが、不具合や未反映の費用があり得ます。画面に示す前提・除外項目を確認してください。利用者に法律上認められる権利を制限する趣旨ではありません。</p>
+      <p>保存した物件はこのブラウザ内に保持され、端末間で同期されません。ブラウザデータの消去などで失われる場合があります。本ツールは入力内容をサーバーへ送信する機能を備えていません（外部ホスティングや追加サービスの取扱いは別途確認してください）。</p>
+    </section>
     <section class="card saved-section" aria-labelledby="savedHeading">
       <h2 id="savedHeading">保存した物件・比較</h2>
       <div class="saved-actions"><button id="savePropertyBtn" type="button">現在の物件を保存</button></div>
@@ -339,162 +352,138 @@
       return Number.isFinite(n) ? n : 0;
     }
 
-    // 返済を月ごとに追跡し、最終年の端数・10年以内の完済に対応する。
-    function renderTenYearSimulation({loanAmount, monthlyRate, numberOfPayments, monthlyLoanPayment, effectiveRent, annualExpenses, hasRequiredInputs}){
-      const totalNode=document.getElementById("tenYearCashFlow");
-      const averageNode=document.getElementById("averageCashFlow");
-      const balanceNode=document.getElementById("tenYearLoanBalance");
-      const tbody=document.querySelector("#simulationTable tbody");
-      const chart=document.getElementById("simulationChart");
-      tbody.replaceChildren(); chart.replaceChildren();
-      if(!hasRequiredInputs || (loanAmount>0 && numberOfPayments<=0)){
-        totalNode.textContent=averageNode.textContent=balanceNode.textContent="-";
-        const msg=document.createElementNS("http://www.w3.org/2000/svg","text");
-        msg.setAttribute("x","400");msg.setAttribute("y","140");msg.setAttribute("text-anchor","middle");
-        msg.setAttribute("fill","#6b7280");msg.textContent="購入価格と月額家賃を入力してください（借入時は返済期間も必要）";
-        chart.append(msg);return;
+    // 計算の単一エンジン。保存物件と画面表示の双方で使用する。
+    const additionalIds=["rentDecline","majorRepairYear","majorRepairCost"];
+    function readInputs(){
+      const obj={};
+      ["propertyName","prefecture","city","builtYear","landArea","buildingArea",...ids,...additionalIds].forEach(id=>obj[id]=document.getElementById(id).value);
+      return obj;
+    }
+    function calcModel(inp){
+      const problems=[];
+      const numbers={};
+      const fieldNames={
+        purchase:"購入価格",fees:"諸費用",renovation:"リフォーム費",
+        loanAmount:"借入額",interestRate:"金利（年利）",loanYears:"返済期間",
+        rent:"月額家賃",tax:"固定資産税",insurance:"火災保険",
+        maintenance:"年間修繕費",vacancy:"空室率",
+        rentDecline:"年間家賃下落率",majorRepairYear:"大型修繕の実施年",
+        majorRepairCost:"大型修繕費"
+      };
+      [...ids,...additionalIds].forEach(id=>{
+        const raw=inp[id]??"";
+        const v=raw===""?0:Number(raw);
+        if(!Number.isFinite(v)){
+          problems.push(fieldNames[id]+"は有効な数値で入力してください。");
+        } else if(v<0){
+          problems.push(id==="purchase"
+            ? "購入価格は0円より大きい値を入力してください。"
+            : fieldNames[id]+"は0以上の数値を入力してください。");
+        }
+        numbers[id]=Number.isFinite(v)?v:0;
+      });
+      const n=numbers;
+      if(n.vacancy>100)problems.push("空室率は0〜100％にしてください。");
+      if(n.rentDecline>100)problems.push("年間家賃下落率は0〜100％にしてください。");
+      if(n.loanAmount>0 && !(n.loanYears>0))problems.push("借入額がある場合、返済期間を入力してください。");
+      if(n.loanYears>0 && (!Number.isInteger(n.loanYears)||n.loanYears>100))problems.push("返済期間は1〜100の整数年にしてください。");
+      if(n.majorRepairCost>0 && (!Number.isInteger(n.majorRepairYear)||n.majorRepairYear<1||n.majorRepairYear>10))problems.push("大型修繕費を入力する場合、実施年を1〜10年目から選んでください。");
+      if(n.majorRepairYear>0 && (!Number.isInteger(n.majorRepairYear)||n.majorRepairYear>10))problems.push("大型修繕の実施年は1〜10の整数年にしてください。");
+      const total=n.purchase+n.fees+n.renovation;
+      if(n.purchase>0 && n.loanAmount>total)problems.push("借入額が総投下資金を超えています。融資条件を確認してください。");
+      if((inp.purchase??"")==="" || (inp.rent??"")==="")problems.push("購入価格と月額家賃を入力してください。");
+      if(n.purchase===0 && (inp.purchase??"")!=="")problems.push("購入価格は0円より大きい値を入力してください。");
+      if(problems.length)return {valid:false,problems};
+      const months=n.loanYears*12,rate=n.interestRate/1200;
+      let monthly=0;
+      if(n.loanAmount>0){
+        monthly=rate>0 ? n.loanAmount*rate/(-Math.expm1(-months*Math.log1p(rate))) : n.loanAmount/months;
       }
-      let balance=loanAmount, cumulative=0;
-      const rows=[];
+      const gross=n.rent*12,expenses=n.tax+n.insurance+n.maintenance;
+      const effective=gross*(1-n.vacancy/100);
+      const equity=total-n.loanAmount;
+      let balance=n.loanAmount,cumulative=0;
+      const years=[];
       for(let year=1;year<=10;year++){
         let repayment=0;
-        for(let month=(year-1)*12;month<year*12;month++){
-          if(balance<=0.000001 || month>=numberOfPayments)break;
-          const interest=balance*monthlyRate;
-          const payment=Math.min(monthlyLoanPayment,balance+interest);
-          repayment+=payment;
-          balance=Math.max(0,balance+interest-payment);
+        for(let j=0;j<12;j++){
+          const month=(year-1)*12+j;
+          if(month>=months||balance<=1e-7)break;
+          const interest=balance*rate;
+          const due=Math.min(monthly,balance+interest);
+          repayment+=due;balance=Math.max(0,balance+interest-due);
         }
-        const cf=effectiveRent-annualExpenses-repayment;
+        const annualRent=effective*Math.pow(1-n.rentDecline/100,year-1);
+        const majorRepair=year===n.majorRepairYear?n.majorRepairCost:0;
+        const cf=annualRent-expenses-majorRepair-repayment;
         cumulative+=cf;
-        rows.push({year,repayment,cf,cumulative,balance});
+        years.push({year,annualRent,expenses,majorRepair,repayment,cf,cumulative,balance});
+      }
+      const first=years[0];
+      const recoveryYear=equity>0
+        ? (years.find(r=>r.cumulative>=equity-1e-7)?.year ?? null)
+        : null;
+      return {valid:true,problems:[],total,equity,gross,effective,expenses,monthly,
+        annualPayment:first.repayment,cf:first.cf,years,cumulative,balance,recoveryYear,
+        grossYield:gross/n.purchase*100,netYield:(effective-expenses)/total*100,
+        ccr:equity>0?first.cf/equity*100:NaN,
+        payback:equity>0&&first.cf>0?equity/first.cf:NaN};
+    }
+    function renderSimulation(model){
+      const graph=document.getElementById("simGraph"),tbody=document.getElementById("simBody");
+      graph.replaceChildren();tbody.replaceChildren();
+      const fields=["simCumulative","simAverage","simBalance","simAfterEquity","simRecoveryYear"];
+      if(!model.valid){fields.forEach(id=>document.getElementById(id).textContent="-");return;}
+      document.getElementById("simCumulative").textContent=yen(model.cumulative);
+      document.getElementById("simAverage").textContent=yen(model.cumulative/10);
+      document.getElementById("simBalance").textContent=yen(model.balance);
+      const afterEquity=model.cumulative-model.equity;
+      const netNode=document.getElementById("simAfterEquity");
+      netNode.textContent=yen(afterEquity);
+      netNode.className="value "+(afterEquity<0?"warn":"good");
+      document.getElementById("simRecoveryYear").textContent=model.equity<=0
+        ? "自己資金0円（判定対象外）"
+        : model.recoveryYear===null?"10年以内に未回収":model.recoveryYear+"年目";
+      for(const r of model.years){
         const tr=document.createElement("tr");
-        [year+"年目",yen(effectiveRent),yen(annualExpenses),yen(repayment),yen(cf),yen(cumulative),yen(balance)].forEach(v=>{
+        [r.year+"年目",yen(r.annualRent),yen(r.expenses),yen(r.majorRepair),yen(r.repayment),yen(r.cf),yen(r.cumulative),yen(r.balance)].forEach(v=>{
           const td=document.createElement("td");td.textContent=v;tr.append(td);
-        });
-        tbody.append(tr);
+        });tbody.append(tr);
       }
-      totalNode.textContent=yen(cumulative);
-      totalNode.className="value "+(cumulative>=0?"good":"warn");
-      averageNode.textContent=yen(cumulative/10);
-      balanceNode.textContent=yen(balance);
       const NS="http://www.w3.org/2000/svg";
-      function node(tag,attrs,text){const e=document.createElementNS(NS,tag);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,String(v)));if(text!==undefined)e.textContent=text;chart.append(e);return e;}
-      const left=90,right=770,top=25,bottom=235;
-      const values=[0,...rows.map(r=>r.cumulative/10000)];
-      let lo=Math.min(...values),hi=Math.max(...values);
-      if(hi-lo<1){lo-=1;hi+=1;}
-      const pad=(hi-lo)*0.12;lo-=pad;hi+=pad;
-      const y=v=>bottom-(v-lo)/(hi-lo)*(bottom-top);
-      const x=i=>left+(right-left)*i/10;
-      for(let i=0;i<=4;i++){
-        const value=lo+(hi-lo)*i/4,yy=y(value);
-        node("line",{x1:left,y1:yy,x2:right,y2:yy,stroke:"#e5e7eb"});
-        node("text",{x:left-10,y:yy+4,"text-anchor":"end","font-size":12,fill:"#6b7280"},Math.round(value).toLocaleString("ja-JP"));
+      const add=(tag,attrs,content)=>{const e=document.createElementNS(NS,tag);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,String(v)));if(content!==undefined)e.textContent=content;graph.append(e);};
+      const values=[0,...model.years.map(r=>r.cumulative/10000)];
+      let min=Math.min(...values),max=Math.max(...values);if(max-min<1){min-=1;max+=1;}
+      const pad=(max-min)*0.1;min-=pad;max+=pad;
+      const y=v=>236-(v-min)/(max-min)*205,x=i=>75+i*69;
+      for(let t=0;t<=4;t++){const v=min+(max-min)*t/4,yy=y(v);
+        add("line",{x1:75,x2:767,y1:yy,y2:yy,stroke:"#e5e7eb"});
+        add("text",{x:69,y:yy+4,"text-anchor":"end","font-size":12,fill:"#6b7280"},Math.round(v).toLocaleString("ja-JP"));
       }
-      node("line",{x1:left,y1:y(0),x2:right,y2:y(0),stroke:"#9ca3af","stroke-width":1.5});
-      const points=rows.map(r=>x(r.year)+","+y(r.cumulative/10000)).join(" ");
-      node("polyline",{points,fill:"none",stroke:cumulative>=0?"#15803d":"#b45309","stroke-width":3,"stroke-linecap":"round","stroke-linejoin":"round"});
-      rows.forEach(r=>{
-        const cx=x(r.year),cy=y(r.cumulative/10000);
-        node("circle",{cx,cy,r:4,fill:cumulative>=0?"#15803d":"#b45309"});
-        node("text",{x:cx,y:bottom+22,"text-anchor":"middle","font-size":11,fill:"#6b7280"},String(r.year));
-      });
-      node("text",{x:430,y:bottom+42,"text-anchor":"middle","font-size":12,fill:"#6b7280"},"経過年数（年）");
-      node("text",{x:15,y:17,"font-size":12,fill:"#6b7280"},"万円");
+      add("line",{x1:75,x2:767,y1:y(0),y2:y(0),stroke:"#9ca3af","stroke-width":1.5});
+      add("polyline",{points:model.years.map(r=>x(r.year)+","+y(r.cumulative/10000)).join(" "),fill:"none",stroke:"#15803d","stroke-width":3});
+      model.years.forEach(r=>{add("circle",{cx:x(r.year),cy:y(r.cumulative/10000),r:4,fill:"#15803d"});
+        add("text",{x:x(r.year),y:262,"text-anchor":"middle","font-size":12,fill:"#6b7280"},String(r.year));});
+      add("text",{x:10,y:17,"font-size":12,fill:"#6b7280"},"累計CF（万円）");
     }
-
     function calculate(){
-      const propertyName = document.getElementById("propertyName").value.trim();
-      const prefecture = document.getElementById("prefecture").value;
-      const city = document.getElementById("city").value.trim();
-      const landArea = Number(document.getElementById("landArea").value);
-      const buildingArea = Number(document.getElementById("buildingArea").value);
-
-      // ↓ 築年数の計算を追加
-  const currentYear = new Date().getFullYear();
-  const builtYear = Number(document.getElementById("builtYear").value);
-
-  const buildingAge = builtYear
-    ? currentYear - builtYear
-    : null;
-
-
-      document.getElementById("propertyTitle").textContent = propertyName || "物件名未入力";
-      document.getElementById("propertyLocation").textContent =
-        [prefecture, city].filter(Boolean).join(" ") || "地域未入力";
-
-      const purchase = Math.max(0, val("purchase"));
-      const fees = Math.max(0, val("fees"));
-      const renovation = Math.max(0, val("renovation"));
-      const loanAmount = Math.max(0, val("loanAmount"));
-      const interestRate = Math.max(0, val("interestRate"));
-      const loanYears = Math.max(0, val("loanYears"));
-      const rent = Math.max(0, val("rent"));
-      const tax = Math.max(0, val("tax"));
-      const insurance = Math.max(0, val("insurance"));
-      const maintenance = Math.max(0, val("maintenance"));
-      const vacancy = Math.min(100, Math.max(0, val("vacancy")));
-
-      const totalInvestment = purchase + fees + renovation;
-      const monthlyRate = interestRate / 100 / 12;
-const numberOfPayments = loanYears * 12;
-
-let monthlyLoanPayment = 0;
-
-if (loanAmount > 0 && numberOfPayments > 0) {
-  if (monthlyRate > 0) {
-    monthlyLoanPayment =
-      loanAmount *
-      monthlyRate *
-      Math.pow(1 + monthlyRate, numberOfPayments) /
-      (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
-  } else {
-    monthlyLoanPayment = loanAmount / numberOfPayments;
-  }
-}
-
-const annualLoanPayment = monthlyLoanPayment * 12;
-      document.getElementById("monthlyLoanPayment").textContent = yen(monthlyLoanPayment);
-      document.getElementById("annualLoanPayment").textContent = yen(annualLoanPayment);
-      const grossRent = rent * 12;
-      const effectiveRent = grossRent * (1 - vacancy / 100);
-      const annualExpenses = tax + insurance + maintenance;
-      const cashFlow = effectiveRent - annualExpenses - annualLoanPayment;
-      const equity = Math.max(0, totalInvestment - loanAmount);
-      const ccr = equity > 0 ? cashFlow / equity * 100 : NaN;
-      const grossYield = purchase > 0 ? grossRent / purchase * 100 : NaN;
-      const netIncomeBeforeLoan = effectiveRent - annualExpenses;
-      const netYield = totalInvestment > 0
-  ? netIncomeBeforeLoan / totalInvestment * 100
-  : NaN;
-      const payback = cashFlow > 0 && equity > 0 ? equity / cashFlow : NaN;
-
-      document.getElementById("totalInvestment").textContent = yen(totalInvestment);
-      document.getElementById("grossRent").textContent = yen(grossRent);
-      document.getElementById("effectiveRent").textContent = yen(effectiveRent);
-      document.getElementById("buildingAge").textContent = buildingAge !== null ? buildingAge + " 年" : "-";
-      document.getElementById("landAreaResult").textContent =landArea ? landArea + " ㎡" : "-";
-      document.getElementById("buildingAreaResult").textContent =buildingArea ? buildingArea + " ㎡" : "-";
-      document.getElementById("annualExpenses").textContent = yen(annualExpenses);
-      document.getElementById("cashFlow").textContent = yen(cashFlow);
-      document.getElementById("equity").textContent = yen(equity);
-      document.getElementById("ccr").textContent = pct(ccr);
-      document.getElementById("grossYield").textContent = pct(grossYield);
-      document.getElementById("netYield").textContent = pct(netYield);
-      const hasRequiredInputs = purchase > 0 && rent >0;
-      document.getElementById("payback").textContent = 
-        !hasRequiredInputs
-        ? "-"
-        :cashFlow <= 0
-        ?"回収不可"
-        : Number.isFinite(payback) ? payback.toFixed(1) + " 年" : "-";
-
-      document.getElementById("cashFlow").className = "value " + (cashFlow >= 0 ? "good" : "warn");
-      renderTenYearSimulation({loanAmount, monthlyRate, numberOfPayments, monthlyLoanPayment, effectiveRent, annualExpenses, hasRequiredInputs});
+      const inp=readInputs(),m=calcModel(inp);
+      document.getElementById("propertyTitle").textContent=inp.propertyName.trim()||"物件名未入力";
+      document.getElementById("propertyLocation").textContent=[inp.prefecture,inp.city].filter(Boolean).join(" ")||"地域未入力";
+      const age=Number(inp.builtYear);
+      document.getElementById("buildingAge").textContent=age>0?(new Date().getFullYear()-age)+" 年":"-";
+      ["landArea","buildingArea"].forEach(id=>document.getElementById(id+"Result").textContent=Number(inp[id])>0?Number(inp[id])+" ㎡":"-");
+      document.getElementById("validationMessage").textContent=m.problems.join("\n");
+      const display={totalInvestment:m.total,grossRent:m.gross,effectiveRent:m.effective,annualExpenses:m.expenses,
+        monthlyLoanPayment:m.monthly,annualLoanPayment:m.annualPayment,cashFlow:m.cf,equity:m.equity};
+      Object.entries(display).forEach(([id,v])=>document.getElementById(id).textContent=m.valid?yen(v):"-");
+      ["grossYield","netYield","ccr"].forEach(id=>document.getElementById(id).textContent=m.valid?pct(m[id]):"-");
+      document.getElementById("payback").textContent=!m.valid?"-":Number.isFinite(m.payback)?m.payback.toFixed(1)+" 年":m.cf<=0?"回収不可":"-";
+      document.getElementById("cashFlow").className="value "+(m.valid&&m.cf<0?"warn":"good");
+      renderSimulation(m);
     }
-    
-    ids.forEach(id => document.getElementById(id).addEventListener("input", calculate));
+
+    [...ids,...additionalIds].forEach(id => document.getElementById(id).addEventListener("input", calculate));
     ["propertyName","city"].forEach(id => document.getElementById(id).addEventListener("input", calculate));
     document.getElementById("prefecture").addEventListener("change", calculate);
     document.getElementById("builtYear").addEventListener("input", calculate);
@@ -516,6 +505,7 @@ const annualLoanPayment = monthlyLoanPayment * 12;
       document.getElementById("insurance").value = "";
       document.getElementById("maintenance").value = "";
       document.getElementById("vacancy").value = "";
+      additionalIds.forEach(id=>document.getElementById(id).value="");
       calculate();
     });
 
@@ -523,7 +513,7 @@ const annualLoanPayment = monthlyLoanPayment * 12;
 
     // 保存データは入力値だけを保持し、比較時には現在の計算式で再計算します。
     const storageKey = "akiya-calculator-properties-v1";
-    const fieldIds = ["propertyName","prefecture","city","builtYear","landArea","buildingArea", ...ids];
+    const fieldIds = ["propertyName","prefecture","city","builtYear","landArea","buildingArea", ...ids, ...additionalIds];
     let savedProperties = [];
     let selectedCompareIds = [];
     const statusNode = document.getElementById("storageStatus");
@@ -553,25 +543,9 @@ const annualLoanPayment = monthlyLoanPayment * 12;
       const n=Number(inputs[id]);return Number.isFinite(n) ? Math.max(0,n) : 0;
     }
     function metrics(inputs){
-      const purchase=numFrom(inputs,"purchase"),fees=numFrom(inputs,"fees"),renovation=numFrom(inputs,"renovation");
-      const total=purchase+fees+renovation,loan=numFrom(inputs,"loanAmount"),rate=numFrom(inputs,"interestRate")/1200;
-      const months=numFrom(inputs,"loanYears")*12;
-      let monthly=0;
-      if(loan>0 && months>0){
-        monthly=rate>0 ? loan*rate/(1-Math.pow(1+rate,-months)) : loan/months;
-      }
-      const gross=numFrom(inputs,"rent")*12;
-      const effective=gross*(1-Math.min(100,numFrom(inputs,"vacancy"))/100);
-      const expenses=numFrom(inputs,"tax")+numFrom(inputs,"insurance")+numFrom(inputs,"maintenance");
-      const cf=effective-expenses-monthly*12;
-      const equity=Math.max(0,total-loan);
-      return {
-        cf, equity,
-        grossYield:purchase>0?gross/purchase*100:NaN,
-        netYield:total>0?(effective-expenses)/total*100:NaN,
-        ccr:equity>0?cf/equity*100:NaN,
-        payback:equity>0&&cf>0?equity/cf:NaN
-      };
+      const m=calcModel(inputs);
+      if(!m.valid)return {valid:false,cf:NaN,equity:NaN,grossYield:NaN,netYield:NaN,ccr:NaN,payback:NaN};
+      return {valid:true,cf:m.cf,equity:m.equity,grossYield:m.grossYield,netYield:m.netYield,ccr:m.ccr,payback:m.payback};
     }
     function el(tag,cls,txt){
       const node=document.createElement(tag);
@@ -629,7 +603,7 @@ const annualLoanPayment = monthlyLoanPayment * 12;
       return rounded.toLocaleString("ja-JP")+"円";
     }
     function comparePct(n){return Number.isFinite(n)?n.toFixed(1)+"%":"-";}
-    function compareYears(m){return Number.isFinite(m.payback)?m.payback.toFixed(1)+"年":m.cf<=0?"回収不可":"-";}
+    function compareYears(m){return Number.isFinite(m.payback)?m.payback.toFixed(1)+"年":!m.valid?"-":m.cf<=0?"回収不可":"-";}
     function renderCompare(){
       const host=document.getElementById("compareTable");host.replaceChildren();
       const items=selectedCompareIds.map(id=>savedProperties.find(p=>p.id===id)).filter(Boolean);
@@ -664,6 +638,7 @@ const annualLoanPayment = monthlyLoanPayment * 12;
     document.getElementById("savePropertyBtn").addEventListener("click",()=>{
       const inputs=getInputs();
       if(!inputs.propertyName.trim()){showStatus("保存する前に物件名を入力してください。");document.getElementById("propertyName").focus();return;}
+      if(!calcModel(inputs).valid){showStatus("収支条件を確認してください。入力エラーがある物件は保存できません。");return;}
       const entry={id:String(Date.now())+"-"+Math.random().toString(36).slice(2),inputs};
       savedProperties.unshift(entry);
       if(!persistSaved()){savedProperties.shift();return;}
