@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>空き家投資 収支計算ツール V5.1（テスト版）</title>
+  <title>空き家投資 収支計算ツール V5.2（入力案内改善・テスト版）</title>
   <style>
     :root{
       --bg:#f5f7fa; --card:#fff; --text:#1f2937; --muted:#6b7280;
@@ -125,13 +125,24 @@
     .sim-table th:first-child,.sim-table td:first-child{text-align:left}
     .sim-table thead{background:#eff6ff}
     .validation{color:#b91c1c;font-size:13px;line-height:1.6;margin:10px 0;white-space:pre-line}
-    .legal-section p{font-size:13px;color:var(--muted);line-height:1.8}
+    .field-error{color:#b91c1c;font-size:13px;font-weight:600;line-height:1.6;margin-top:7px}
+    .field-error[hidden],.result-error[hidden]{display:none}
+    .input-invalid{border:2px solid #b91c1c}
+    .result-error{padding:12px;margin:0 0 14px;border:1px solid #fca5a5;border-radius:10px;background:#fff7f7;color:#991b1b;font-size:14px;line-height:1.6;white-space:pre-line}
+    .legal-section p,.legal-section li{font-size:13px;color:var(--muted);line-height:1.8}
+    .legal-section h3{font-size:15px;margin:20px 0 8px}
+    .risk-notice{margin-top:18px;padding:16px;border:2px solid #d97706;border-radius:12px;background:#fffbeb}
+    .risk-notice strong{display:block;font-size:17px;color:#92400e;margin-bottom:8px}
+    .risk-notice p{font-size:13px;line-height:1.8;margin:0 0 8px}
+    .risk-notice p:last-child{margin-bottom:0}
+    .legal-note{font-size:12px;color:var(--muted);line-height:1.7}
     @media(max-width:700px){.sim-summary{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>空き家投資 収支計算ツール</h1>
+    <p class="risk-notice"><strong>テスト版：回収年と入力案内の改善</strong>公開版の index.html は変更していません。テスト版で保存する物件データは公開版とは別に管理します。</p>
     <p class="lead">物件名と地域を登録し、価格や家賃、年間経費、空室率から収支を自動計算します。</p>
 
     <div class="grid">
@@ -224,9 +235,11 @@
 <div class="field">
   <label for="loanYears">返済期間</label>
   <div class="input-wrap">
-    <input id="loanYears" type="number" min="1">
+    <input id="loanYears" type="number" min="1" aria-describedby="loanYearsHint loanYearsError">
     <span class="unit">年</span>
   </div>
+  <div class="hint" id="loanYearsHint">借入額を入力した場合は、返済期間も入力してください。</div>
+  <div class="field-error" id="loanYearsError" role="alert" hidden>借入額を入力した場合は、返済期間を入力してください。</div>
 </div>
 
         <div class="field">
@@ -265,6 +278,7 @@
 
       <section class="card">
         <h2>計算結果</h2>
+        <div class="result-error" id="resultError" role="alert" hidden></div>
 
         <div class="property-summary">
           <div class="name">物件情報</div>
@@ -297,6 +311,12 @@
           <div class="result"><div class="name">初年度CFによる単純回収年数</div><div class="value" id="payback">-</div></div>
         </div>
 
+        <aside class="risk-notice" aria-label="投資判断に関する重要な注意">
+          <strong>⚠ 投資はくれぐれも自己責任で！</strong>
+          <p>本ツールは無料の概算シミュレーターです。計算結果は参考値であり、物件の購入・売却・融資を推奨したり、将来の利益・元本の回収を保証したりするものではありません。</p>
+          <p>税金、管理委託費、入居者募集費、突発修繕、売却費用など、計算に含まれない費用があります。実際の投資判断は、条件を個別に確認し、必要に応じて専門家へ相談したうえで、ご自身の判断と責任で行ってください。</p>
+        </aside>
+
         <div class="formula">
   <div>表面利回り ＝ 満室想定年間家賃 ÷ 購入価格</div>
   <div>実質利回り（融資前）＝（空室考慮後年間家賃収入 − 年間経費）÷ 総投資資金</div>
@@ -316,17 +336,29 @@
         <div class="result"><div class="name">年間平均CF</div><div class="value" id="simAverage">-</div></div>
         <div class="result"><div class="name">10年後ローン残高</div><div class="value" id="simBalance">-</div></div>
         <div class="result"><div class="name">10年間の累計CF − 初期自己資金</div><div class="value" id="simAfterEquity">-</div></div>
-        <div class="result"><div class="name">10年間のCFによる自己資金回収年</div><div class="value" id="simRecoveryYear">-</div></div>
+        <div class="result"><div class="name">累計CFが自己資金に初めて到達した年</div><div class="value" id="simRecoveryYear">-</div></div>
+        <div class="result"><div class="name">10年目まで回収水準を維持した最初の年</div><div class="value" id="simStableRecoveryYear">-</div></div>
       </div>
       <svg id="simGraph" class="sim-chart" viewBox="0 0 800 280" role="img" aria-label="累計キャッシュフローの推移"></svg>
       <div class="sim-scroll"><table class="sim-table"><thead><tr><th>年</th><th>家賃収入</th><th>通常経費</th><th>大型修繕</th><th>返済</th><th>年間CF</th><th>累計CF</th><th>借入残高</th></tr></thead><tbody id="simBody"></tbody></table></div>
-      <p class="status-text">※「累計CF − 初期自己資金」は物件の売却価値・残存価値を含まない、家賃収支のみの参考値です。自己資金回収年は各年末の累計CFで判定します。累計CFは初期自己資金を差し引く前の金額。所得税・住民税、管理委託費、募集費、突発修繕、家賃以外の費用、売却損益等は未反映です。初年度の家賃下落はありません。</p>
+      <p class="status-text">※「累計CF − 初期自己資金」は物件の売却価値・残存価値を含まない、家賃収支のみの参考値です。回収年は各年末の累計CFで判定します。「初めて到達」は途中で再び回収水準を下回る可能性があります。「維持した最初の年」は、その年から10年目まで各年末の累計CFが自己資金以上となる最初の年です。11年目以降の維持や、物件売却による資金回収を意味しません。累計CFは初期自己資金を差し引く前の金額。所得税・住民税、管理委託費、募集費、突発修繕、家賃以外の費用、売却損益等は未反映です。初年度の家賃下落はありません。</p>
     </section>
-    <section class="card legal-section">
-      <h2>ご利用上の注意</h2>
-      <p>本ツールは不動産投資の収支を概算する参考シミュレーターです。計算結果は入力条件と一定の仮定に基づき、将来の収益・投資成果を保証しません。購入・売却・融資等は利用者自身で十分に検討し、必要に応じて専門家にご相談ください。</p>
-      <p>本ツールは正確な計算に努めますが、不具合や未反映の費用があり得ます。画面に示す前提・除外項目を確認してください。利用者に法律上認められる権利を制限する趣旨ではありません。</p>
-      <p>保存した物件はこのブラウザ内に保持され、端末間で同期されません。ブラウザデータの消去などで失われる場合があります。本ツールは入力内容をサーバーへ送信する機能を備えていません（外部ホスティングや追加サービスの取扱いは別途確認してください）。</p>
+    <section class="card legal-section" aria-labelledby="legalHeading">
+      <h2 id="legalHeading">ご利用上の注意・利用条件（確認用草案）</h2>
+      <p class="legal-note">以下は弁護士確認前の草案です。法律上の責任を完全に免除するものではありません。</p>
+      <h3>1. 本ツールの目的</h3>
+      <p>本ツールは、不動産投資に関する収支を利用者の入力条件に基づいて概算する、無料の参考計算ツールです。個別の物件に対する投資助言、購入・売却の推奨、収益の保証を目的としません。</p>
+      <h3>2. 計算結果と前提条件</h3>
+      <p>計算結果は入力値と簡略化した計算条件に基づきます。正確性・完全性・特定の目的への適合性を保証するものではありません。所得税・住民税、管理委託費、募集広告費、突発修繕、売却損益など、計算に含まれない項目があります。実際の支出や金融機関の返済条件と異なる場合があります。</p>
+      <h3>3. 投資判断</h3>
+      <p>投資には元本割れや損失のリスクがあります。利用者は計算結果のみで判断せず、物件の状態、契約内容、法令、税金、融資条件等を自ら確認し、必要に応じて宅地建物取引士、税理士、弁護士などの専門家に相談してください。投資判断は利用者ご自身の責任で行ってください。</p>
+      <h3>4. 不具合・サービス変更</h3>
+      <p>本ツールには計算上の誤り、不具合、表示の不備等が生じる可能性があります。運営者は必要に応じて内容の修正、機能変更、提供の一時停止または終了を行う場合があります。</p>
+      <h3>5. 責任の範囲</h3>
+      <p>本ツールの利用に関連して生じた損害について、運営者は法令上認められる範囲で責任を負わないものとします。ただし、法令により免責が認められない場合には、その法令に従います。本項は利用者の法律上の権利を不当に制限する趣旨ではありません。</p>
+      <h3>6. 保存データ</h3>
+      <p>保存した物件データは、原則として利用中のブラウザ内に保存され、端末間では同期されません。ブラウザのデータ削除、端末の故障等により消失する可能性があります。重要なデータは別途控えてください。</p>
+      <p class="legal-note">※この草案は、運営者情報、問い合わせ窓口、施行日、広告・アクセス解析の有無などが確定した段階で見直し、必要に応じて専門家の確認を受けてください。</p>
     </section>
     <section class="card saved-section" aria-labelledby="savedHeading">
       <h2 id="savedHeading">保存した物件・比較</h2>
@@ -423,8 +455,13 @@
       const recoveryYear=equity>0
         ? (years.find(r=>r.cumulative>=equity-1e-7)?.year ?? null)
         : null;
+      // 「維持」は、10年目までの各年末に再び自己資金を下回らないこと。
+      // 10年後の実際の投資収益や将来の回収を保証する指標ではない。
+      const stableRecoveryYear=equity>0
+        ? (years.find((r,i)=>years.slice(i).every(y=>y.cumulative>=equity-1e-7))?.year ?? null)
+        : null;
       return {valid:true,problems:[],total,equity,gross,effective,expenses,monthly,
-        annualPayment:first.repayment,cf:first.cf,years,cumulative,balance,recoveryYear,
+        annualPayment:first.repayment,cf:first.cf,years,cumulative,balance,recoveryYear,stableRecoveryYear,
         grossYield:gross/n.purchase*100,netYield:(effective-expenses)/total*100,
         ccr:equity>0?first.cf/equity*100:NaN,
         payback:equity>0&&first.cf>0?equity/first.cf:NaN};
@@ -432,7 +469,7 @@
     function renderSimulation(model){
       const graph=document.getElementById("simGraph"),tbody=document.getElementById("simBody");
       graph.replaceChildren();tbody.replaceChildren();
-      const fields=["simCumulative","simAverage","simBalance","simAfterEquity","simRecoveryYear"];
+      const fields=["simCumulative","simAverage","simBalance","simAfterEquity","simRecoveryYear","simStableRecoveryYear"];
       if(!model.valid){fields.forEach(id=>document.getElementById(id).textContent="-");return;}
       document.getElementById("simCumulative").textContent=yen(model.cumulative);
       document.getElementById("simAverage").textContent=yen(model.cumulative/10);
@@ -443,7 +480,10 @@
       netNode.className="value "+(afterEquity<0?"warn":"good");
       document.getElementById("simRecoveryYear").textContent=model.equity<=0
         ? "自己資金0円（判定対象外）"
-        : model.recoveryYear===null?"10年以内に未回収":model.recoveryYear+"年目";
+        : model.recoveryYear===null?"10年以内に未到達":model.recoveryYear+"年目";
+      document.getElementById("simStableRecoveryYear").textContent=model.equity<=0
+        ? "自己資金0円（判定対象外）"
+        : model.stableRecoveryYear===null?"10年目時点で未回収":model.stableRecoveryYear+"年目";
       for(const r of model.years){
         const tr=document.createElement("tr");
         [r.year+"年目",yen(r.annualRent),yen(r.expenses),yen(r.majorRepair),yen(r.repayment),yen(r.cf),yen(r.cumulative),yen(r.balance)].forEach(v=>{
@@ -474,6 +514,16 @@
       document.getElementById("buildingAge").textContent=age>0?(new Date().getFullYear()-age)+" 年":"-";
       ["landArea","buildingArea"].forEach(id=>document.getElementById(id+"Result").textContent=Number(inp[id])>0?Number(inp[id])+" ㎡":"-");
       document.getElementById("validationMessage").textContent=m.problems.join("\n");
+      // 借入額を入れたのに返済期間が空欄・0なら、入力欄のすぐ下に案内を出す。
+      const loanMissing=Number(inp.loanAmount)>0 && !(Number(inp.loanYears)>0);
+      const loanYearsField=document.getElementById("loanYears");
+      loanYearsField.classList.toggle("input-invalid",loanMissing);
+      loanYearsField.setAttribute("aria-invalid",loanMissing?"true":"false");
+      document.getElementById("loanYearsError").hidden=!loanMissing;
+      // 結果欄でも、計算結果が「-」になった理由をすぐ確認できるようにする。
+      const resultError=document.getElementById("resultError");
+      resultError.hidden=m.valid;
+      resultError.textContent=m.valid?"":"入力内容を確認してください。\n"+m.problems.join("\n");
       const display={totalInvestment:m.total,grossRent:m.gross,effectiveRent:m.effective,annualExpenses:m.expenses,
         monthlyLoanPayment:m.monthly,annualLoanPayment:m.annualPayment,cashFlow:m.cf,equity:m.equity};
       Object.entries(display).forEach(([id,v])=>document.getElementById(id).textContent=m.valid?yen(v):"-");
@@ -512,7 +562,7 @@
     calculate();
 
     // 保存データは入力値だけを保持し、比較時には現在の計算式で再計算します。
-    const storageKey = "akiya-calculator-properties-v1";
+    const storageKey = "akiya-calculator-properties-v5-2-input-guide-test";
     const fieldIds = ["propertyName","prefecture","city","builtYear","landArea","buildingArea", ...ids, ...additionalIds];
     let savedProperties = [];
     let selectedCompareIds = [];
